@@ -38,75 +38,75 @@ Organizations:
         Rule: "OR('OrdererMSP.admin')"
     OrdererEndpoints:
       - orderer.example.com:7050
-  - &FarmerOrg
+  - &Org1
     # DefaultOrg defines the organization which is used in the sampleconfig
     # of the fabric.git development environment
-    Name: FarmerMSP
+    Name: Org1MSP
     # ID to load the MSP definition as
-    ID: FarmerMSP
-    MSPDir: ../organizations/peerOrganizations/farmer.example.com/msp
+    ID: Org1MSP
+    MSPDir: ../organizations/peerOrganizations/org1.example.com/msp
     # Policies defines the set of policies at this level of the config tree
     # For organization policies, their canonical path is usually
     #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
     Policies:
       Readers:
         Type: Signature
-        Rule: "OR('FarmerMSP.admin', 'FarmerMSP.peer', 'FarmerMSP.client')"
+        Rule: "OR('Org1MSP.admin', 'Org1MSP.peer', 'Org1MSP.client')"
       Writers:
         Type: Signature
-        Rule: "OR('FarmerMSP.admin', 'FarmerMSP.client')"
+        Rule: "OR('Org1MSP.admin', 'Org1MSP.client')"
       Admins:
         Type: Signature
-        Rule: "OR('FarmerMSP.admin')"
+        Rule: "OR('Org1MSP.admin')"
       Endorsement:
         Type: Signature
-        Rule: "OR('FarmerMSP.peer')"
-  - &DistributorOrg
+        Rule: "OR('Org1MSP.peer')"
+  - &Org2
     # DefaultOrg defines the organization which is used in the sampleconfig
     # of the fabric.git development environment
-    Name: DistributorMSP
+    Name: Org2MSP
     # ID to load the MSP definition as
-    ID: DistributorMSP
-    MSPDir: ../organizations/peerOrganizations/distributor.example.com/msp
+    ID: Org2MSP
+    MSPDir: ../organizations/peerOrganizations/org2.example.com/msp
     # Policies defines the set of policies at this level of the config tree
     # For organization policies, their canonical path is usually
     #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
     Policies:
       Readers:
         Type: Signature
-        Rule: "OR('DistributorMSP.admin', 'DistributorMSP.peer', 'DistributorMSP.client')"
+        Rule: "OR('Org2MSP.admin', 'Org2MSP.peer', 'Org2MSP.client')"
       Writers:
         Type: Signature
-        Rule: "OR('DistributorMSP.admin', 'DistributorMSP.client')"
+        Rule: "OR('Org2MSP.admin', 'Org2MSP.client')"
       Admins:
         Type: Signature
-        Rule: "OR('DistributorMSP.admin')"
+        Rule: "OR('Org2MSP.admin')"
       Endorsement:
         Type: Signature
-        Rule: "OR('DistributorMSP.peer')"
-  - &RetailerOrg
+        Rule: "OR('Org2MSP.peer')"
+  - &Org3
     # DefaultOrg defines the organization which is used in the sampleconfig
     # of the fabric.git development environment
-    Name: RetailerMSP
+    Name: Org3MSP
     # ID to load the MSP definition as
-    ID: RetailerMSP
-    MSPDir: ../organizations/peerOrganizations/distributor.example.com/msp
+    ID: Org3MSP
+    MSPDir: ../organizations/peerOrganizations/org3.example.com/msp
     # Policies defines the set of policies at this level of the config tree
     # For organization policies, their canonical path is usually
     #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
     Policies:
       Readers:
         Type: Signature
-        Rule: "OR('RetailerMSP.admin', 'RetailerMSP.peer', 'RetailerMSP.client')"
+        Rule: "OR('Org3MSP.admin', 'Org3MSP.peer', 'Org3MSP.client')"
       Writers:
         Type: Signature
-        Rule: "OR('RetailerMSP.admin', 'RetailerMSP.client')"
+        Rule: "OR('Org3MSP.admin', 'Org3MSP.client')"
       Admins:
         Type: Signature
-        Rule: "OR('RetailerMSP.admin')"
+        Rule: "OR('Org3MSP.admin')"
       Endorsement:
         Type: Signature
-        Rule: "OR('RetailerMSP.peer')"
+        Rule: "OR('Org3MSP.peer')"
 ################################################################################
 #
 #   SECTION: Capabilities
@@ -297,7 +297,7 @@ Profiles:
     Application:
       <<: *ApplicationDefaults
       Organizations:
-        - *FarmerOrg
-        - *DistributorOrg
-        - *RetailerOrg
+        - *Org1
+        - *Org2
+        - *Org3
       Capabilities: *ApplicationCapabilities

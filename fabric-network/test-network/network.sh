@@ -167,7 +167,7 @@ function createOrgs() {
     fi
     infoln "Generating certificates using cryptogen tool"
 
-    infoln "Creating FarmerOrg Identities"
+    infoln "Creating Org1Org Identities"
 
     set -x
     cryptogen generate --config=./organizations/cryptogen/crypto-config-org1.yaml --output="organizations"
@@ -177,7 +177,7 @@ function createOrgs() {
       fatalln "Failed to generate certificates..."
     fi
 
-    infoln "Creating DistributorOrg Identities"
+    infoln "Creating Org2Org Identities"
 
     set -x
     cryptogen generate --config=./organizations/cryptogen/crypto-config-org2.yaml --output="organizations"
@@ -187,7 +187,7 @@ function createOrgs() {
       fatalln "Failed to generate certificates..."
     fi
 
-    infoln "Creating RetailerOrg Identities"
+    infoln "Creating Org3Org Identities"
 
     set -x
     cryptogen generate --config=./organizations/cryptogen/crypto-config-org3.yaml --output="organizations"
@@ -274,7 +274,7 @@ function createOrgs() {
 
   fi
 
-  infoln "Generating CCP files for FarmerOrg, DistributorOrg and RetailerOrg"
+  infoln "Generating CCP files for Org1Org, Org2Org and Org3Org"
   ./organizations/ccp-generate.sh
 }
 
