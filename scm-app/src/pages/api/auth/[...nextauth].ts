@@ -5,6 +5,7 @@ import { signIn as backendSignIn } from "@/services/auth/";
 interface User {
     id: string;
     name: string;
+    role: string;
 }
 
 declare module "next-auth" {
@@ -12,6 +13,7 @@ declare module "next-auth" {
         user: {
             id: string;
             name: string;
+            role: string;
         };
     }
 }
@@ -29,10 +31,11 @@ export default NextAuth({
                     return null;
                 }
                 try {
-                    await backendSignIn(credentials.username, credentials.password);
+                    const user = await backendSignIn(credentials.username, credentials.password);
                     return {
-                        id: credentials.username,
-                        name: credentials.username
+                        id: user.username,
+                        name: user.username,
+                        role: user.role
                     };
                 } catch (error: unknown) {
                     console.error("Error during authorization:", error);
@@ -47,7 +50,7 @@ export default NextAuth({
     },
     pages: {
         // Redirect to this custom page on signin failure or when user is not logged in
-        signIn: "/admin/login",
+        signIn: "/login",
     },
     callbacks: {
         async jwt({ token, user }) {
@@ -55,14 +58,18 @@ export default NextAuth({
         if (user) {
             token.id = user.id;
             token.name = user.name;
+            if ("role" in user) {
+                token.role = user.role;
+            }
         }
         return token;
         },
         async session({ session, token }) {
         if (token) {
             session.user = {
-            id: token.id as string,
-            name: token.name as string,
+                id: token.id as string,
+                name: token.name as string,
+                role: token.role as string,
             };
         }
         return session;
