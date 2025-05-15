@@ -14,7 +14,6 @@ import { NAVI_CONFIG } from "@/components/nav/NavConfig";
 const AppSidebar = ({...props}) => {
     const { data: session } = useSession();
     const items = NAVI_CONFIG[session?.user.role as string] || [];
-    console.log("Sidebar items", items, session?.user.role as string);
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>

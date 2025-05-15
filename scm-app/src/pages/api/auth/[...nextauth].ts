@@ -23,7 +23,7 @@ export default NextAuth({
         CredentialProvider({
             name: "Credentials",
             credentials: {
-                username: { label: "Username", type: "text" },
+                email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials: Record<string, string> | undefined): Promise<User | null> {
@@ -31,10 +31,10 @@ export default NextAuth({
                     return null;
                 }
                 try {
-                    const user = await backendSignIn(credentials.username, credentials.password);
+                    const user = await backendSignIn(credentials.email, credentials.password);
                     return {
-                        id: user.username,
-                        name: user.username,
+                        id: user.email,
+                        name: user.name,
                         role: user.role
                     };
                 } catch (error: unknown) {
