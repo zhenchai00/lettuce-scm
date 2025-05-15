@@ -12,16 +12,11 @@ const inter = Inter({ subsets: ["latin"] });
 const App = ({ Component, pageProps: { session, ...pageProps } }: AppProps) => {
     const router = useRouter();
     return (
-        <main className={inter.className}>
-            <Head>
-                <title>Lettuce Supply Chain Manangement System</title>
-            </Head>
-            <SessionProvider session={session}>
-                <QueryClientProvider client={queryClient}>
-                    <Component {...pageProps} />;
-                </QueryClientProvider>
-            </SessionProvider>
-        </main>
+        <SessionProvider session={session}>
+            <QueryClientProvider client={queryClient}>
+                <Component {...pageProps} />
+            </QueryClientProvider>
+        </SessionProvider>
     );
 };
 

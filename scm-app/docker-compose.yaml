@@ -1,0 +1,48 @@
+services:
+  database:
+    image: postgres
+    container_name: -postgresql
+    environment:
+      POSTGRES_DB: scm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGUSER: postgres
+      PGPORT: 5430
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 10s
+      timeout: 60s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5430:5430"
+    expose:
+      - "5430"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      app:
+        aliases:
+          - database
+
+  nextjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scm-app
+    ports:
+      - "3000:3000"
+    networks:
+      - app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - database
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  pg_data:
