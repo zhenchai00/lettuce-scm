@@ -1,0 +1,82 @@
+---
+version: '3.8'
+services:
+  # ------------------ OrdererOrg Ca -------------------
+  ca-orderer:
+    image: hyperledger/fabric-ca:latest
+    container_name: ca-orderer
+    ports:
+      - "7054:7054"
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+    volumes:
+      - ./ca-server/orderer:/etc/hyperledger/fabric-ca-server
+    command: >
+      sh -c "fabric-ca-server start 
+      --cfg.identities.allowremove=true
+      --tls.enabled=false
+      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+
+  # ------------------ AdminOrg Ca -------------------
+  ca-admin:
+    image: hyperledger/fabric-ca:latest
+    container_name: ca-admin
+    ports:
+      - "8054:7054"
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+    volumes:
+      - ./ca-server/admin:/etc/hyperledger/fabric-ca-server
+    command: >
+      sh -c "fabric-ca-server start 
+      --cfg.identities.allowremove=true
+      --tls.enabled=false
+      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+  
+  # ------------------ FarmerOrg Ca -------------------
+  ca-farmer:
+    image: hyperledger/fabric-ca:latest
+    container_name: ca-farmer
+    ports:
+      - "9054:7054"
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+    volumes:
+      - ./ca-server/farmer:/etc/hyperledger/fabric-ca-server
+    command: >
+      sh -c "fabric-ca-server start 
+      --cfg.identities.allowremove=true
+      --tls.enabled=false
+      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+
+  # ------------------ DistributorOrg Ca -------------------
+  ca-distributor:
+    image: hyperledger/fabric-ca:latest
+    container_name: ca-distributor
+    ports:
+      - "10054:7054"
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+    volumes:
+      - ./ca-server/distributor:/etc/hyperledger/fabric-ca-server
+    command: >
+      sh -c "fabric-ca-server start 
+      --cfg.identities.allowremove=true
+      --tls.enabled=false
+      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+
+  # ------------------ RetailerOrg Ca -------------------
+  ca-retailer:
+    image: hyperledger/fabric-ca:latest
+    container_name: ca-retailer
+    ports:
+      - "11054:7054"
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+    volumes:
+      - ./ca-server/retailer:/etc/hyperledger/fabric-ca-server
+    command: >
+      sh -c "fabric-ca-server start 
+      --cfg.identities.allowremove=true
+      --tls.enabled=false
+      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"

@@ -1,0 +1,142 @@
+##########################################################################
+#     Section: Organizations
+##########################################################################
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/example.com/msp
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+
+  - &AdminOrg
+    Name: AdminOrg
+    ID: AdminMSP
+    MSPDir: crypto-config/peerOrganizations/admin.example.com/msp
+    AnchorPeers:
+      - Host: peer0.admin.example.com
+        Port: 7051
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+  
+  - &FarmerOrg
+    Name: FarmerOrg
+    ID: FarmerMSP
+    MSPDir: crypto-config/peerOrganizations/farmer.example.com/msp
+    AnchorPeers:
+      - Host: peer0.farmer.example.com
+        Port: 8051
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+  
+  - &DistributorOrg
+    Name: DistributorOrg
+    ID: DistributorMSP
+    MSPDir: crypto-config/peerOrganizations/distributor.example.com/msp
+    AnchorPeers:
+      - Host: peer0.distributor.example.com
+        Port: 9051
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+
+  - &RetailerOrg
+    Name: RetailerOrg
+    ID: RetailerMSP
+    MSPDir: crypto-config/peerOrganizations/retailer.example.com/msp
+    AnchorPeers:
+      - Host: peer0.retailer.example.com
+        Port: 10051
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+##########################################################################
+#     Section: Orderer Genesis Profile
+##########################################################################
+Profiles:
+  OrdererGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      OrdererType: solo
+      Addresses:
+        - orderer.example.com:7050
+      BatchTimeout: 2s
+      BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+      Organizations:
+        - *OrdererOrg
+    Consortiums:
+      LettuceConsortium:
+        Organizations:
+          - *AdminOrg
+          - *FarmerOrg
+          - *DistributorOrg
+          - *RetailerOrg
+
+  LettuceChannel:
+    <<: *ChannelDefaults
+    Consortium: LettuceConsortium
+    Application:
+      Organizations:
+        - *AdminOrg
+        - *FarmerOrg
+        - *DistributorOrg
+        - *RetailerOrg
+      Capabilities:
+        V2_0: true
