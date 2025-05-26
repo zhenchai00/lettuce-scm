@@ -1,0 +1,33 @@
+version: 1.1.0
+
+ca:
+  name: ca-admin
+  # keyfile: msp/keystore/key.pem       # auto-generated on first start
+  # certfile: msp/signcerts/cert.pem    # auto-generated on first start
+
+server:
+  port: 8054
+
+tls: 
+  enabled: false
+
+# which user types & org-affiliations are allowed to register
+affiliations:
+  admin:
+    - org1
+  
+# Identities pre-registered in the CA
+registry:
+  maxenrollments: -1
+  allowedremove: true
+  identities:
+    - name: admin
+      pass: adminpw
+      type: client
+      affiliation: admin.org1
+      attrs:
+        hf.Registrar.Roles: "client,user,peer,orderer,admin"
+        hf.Registrar.DelegateRoles: "client,user,peer,orderer"
+        hf.Revoker: true
+        hf.GenCRL: true
+        hf.Registrar.Attributes: "*"

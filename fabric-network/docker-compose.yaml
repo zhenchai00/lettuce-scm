@@ -1,5 +1,3 @@
----
-version: '3.8'
 services:
   # ------------------ OrdererOrg Ca -------------------
   ca-orderer:
@@ -12,10 +10,11 @@ services:
     volumes:
       - ./ca-server/orderer:/etc/hyperledger/fabric-ca-server
     command: >
-      sh -c "fabric-ca-server start 
-      --cfg.identities.allowremove=true
-      --tls.enabled=false
-      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+      sh -c "
+        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      "
 
   # ------------------ AdminOrg Ca -------------------
   ca-admin:
@@ -28,10 +27,11 @@ services:
     volumes:
       - ./ca-server/admin:/etc/hyperledger/fabric-ca-server
     command: >
-      sh -c "fabric-ca-server start 
-      --cfg.identities.allowremove=true
-      --tls.enabled=false
-      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+      sh -c "
+        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      "
   
   # ------------------ FarmerOrg Ca -------------------
   ca-farmer:
@@ -44,10 +44,11 @@ services:
     volumes:
       - ./ca-server/farmer:/etc/hyperledger/fabric-ca-server
     command: >
-      sh -c "fabric-ca-server start 
-      --cfg.identities.allowremove=true
-      --tls.enabled=false
-      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+      sh -c "
+        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      "
 
   # ------------------ DistributorOrg Ca -------------------
   ca-distributor:
@@ -60,10 +61,11 @@ services:
     volumes:
       - ./ca-server/distributor:/etc/hyperledger/fabric-ca-server
     command: >
-      sh -c "fabric-ca-server start 
-      --cfg.identities.allowremove=true
-      --tls.enabled=false
-      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+      sh -c "
+        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      "
 
   # ------------------ RetailerOrg Ca -------------------
   ca-retailer:
@@ -76,7 +78,8 @@ services:
     volumes:
       - ./ca-server/retailer:/etc/hyperledger/fabric-ca-server
     command: >
-      sh -c "fabric-ca-server start 
-      --cfg.identities.allowremove=true
-      --tls.enabled=false
-      --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml"
+      sh -c "
+        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+      "
