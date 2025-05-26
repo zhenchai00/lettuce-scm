@@ -1,39 +1,39 @@
-# Emacs backup files
+# General editor and OS files
 *~
 *#
 .#*
-# Vim file artifacts
-.*.sw*
 .DS_Store
 .project
-# omit Go vendor directories
-vendor/
-.vscode
-.gradle
-.idea
+.vscode/
+.gradle/
+.idea/
+.classpath
+.settings/
+
 # Dependency directories
 node_modules/
 package-lock.json
-# Ignore Gradle build output directory
-build
-# Ignore Maven build output directory
-target
 
-# Eclipse
-.classpath
-.settings
-
-# installed Fabric binaries etc.
-bin/
-builders/
-config/
+# Fabric binaries and dynamic/generated files
 external-chaincode/
-install-fabric.sh
 
-# igore the fabric test network file 
-ca-server/orderer/*
-ca-server/admin/*
-ca-server/farmer/*
-ca-server/distributor/*
-ca-server/retailer/*
+# Generated crypto material
+crypto-config/
+ca-server/orderer/msp/
+ca-server/admin/msp/
+ca-server/farmer/msp/
+ca-server/distributor/msp/
+ca-server/retailer/msp/
+
+# Include specific configuration files
+!ca-server/orderer/fabric-ca-server-config.yaml
+!ca-server/admin/fabric-ca-server-config.yaml
+!ca-server/farmer/fabric-ca-server-config.yaml
+!ca-server/distributor/fabric-ca-server-config.yaml
+!ca-server/retailer/fabric-ca-server-config.yaml
+
+# Omit temporary/generated artifacts
 *.tar.gz
+
+# Optional: Include channel artifacts
+!channel-artifacts/
