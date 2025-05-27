@@ -7,6 +7,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CA_HOST=localhost
 
+export FABRIC_CA_CLIENT_DEBUG=true
+
 # Function to enroll a CA admin
 enroll_ca_admin() {
   ORG_KEY=$1           # "orderer" | "admin" | "farmer" | "distributor" | "retailer"
@@ -21,7 +23,7 @@ enroll_ca_admin() {
     -u http://admin:adminpw@${CA_HOST}:${PORT} \
     --caname ${CA_NAME} \
     --mspdir ${OUT_MSP}/msp \
-    --tls.certfiles "$CA_CERT_PATH"
+    # --tls.certfiles "$CA_CERT_PATH"
 
   echo "📄 Copying NodeOUs config into ${OUT_MSP}/msp/config.yaml"
   cp $ROOT/config/ca-config.yaml ${OUT_MSP}/msp/config.yaml

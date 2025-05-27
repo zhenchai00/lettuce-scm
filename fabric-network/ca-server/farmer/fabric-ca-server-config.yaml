@@ -26,8 +26,8 @@ registry:
       type: client
       affiliation: farmer.org1
       attrs:
-        hf.Registrar.Roles: "client,user,peer,orderer,admin"
-        hf.Registrar.DelegateRoles: "client,user,peer,orderer"
+        hf.Registrar.Roles: "*"
+        hf.Registrar.DelegateRoles: "*"
         hf.Revoker: true
         hf.GenCRL: true
         hf.Registrar.Attributes: "*"

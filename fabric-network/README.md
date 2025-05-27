@@ -26,3 +26,31 @@ The roles are:
 - Retailer
 
 So because of this, the configuration for the network will be a bit different from the default configuration. Because of the network is a permissioned network, we need to have a dynamic enrollment and revoke of the roles to each organizations of the network. 
+
+
+## Folder Structure 
+```
+    fabric-network/          # Fabric network configurations and scripts
+    ├── bin/                 # Fabric binaries
+    ├── builders/            # Builders for chaincode
+    ├── ca-server/           # CA server configurations for each org
+    ├── config/              # Configuration files (e.g., ca-config.yaml)
+    ├── crypto-config/       # Generated MSPs and crypto materials
+    ├── scripts/             # Automation scripts (e.g., enrollment scripts)
+    ├── configtx.yaml        # Channel configuration
+    └── docker-compose.yaml  # Docker Compose setup for CA servers
+```
+
+
+
+external command 
+```bash
+
+rm -rf ./ca-server/*/fabric-ca-server.db ./ca-server/*/msp ./ca-server/*/Issue* ./ca-server/*/*.pem crypto-config
+
+docker-compose down
+docker-compose up -d
+
+docker-compose up -d ca-orderer ca-admin ca-farmer ca-distributor ca-retailer
+
+```

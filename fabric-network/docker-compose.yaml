@@ -15,6 +15,7 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
+    profiles: [ca-server]
 
   # ------------------ AdminOrg Ca -------------------
   ca-admin:
@@ -32,6 +33,7 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
+    profiles: [ca-server]
   
   # ------------------ FarmerOrg Ca -------------------
   ca-farmer:
@@ -49,6 +51,7 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
+    profiles: [ca-server]
 
   # ------------------ DistributorOrg Ca -------------------
   ca-distributor:
@@ -66,6 +69,7 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
+    profiles: [ca-server]
 
   # ------------------ RetailerOrg Ca -------------------
   ca-retailer:
@@ -83,3 +87,166 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
+    profiles: [ca-server]
+
+  # ------------------ Orderer -------------------
+  orderer.example.com:
+    image: hyperledger/fabric-orderer:latest
+    container_name: orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=DEBUG
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    ports:
+      - "7050:7050"
+    volumes:
+      - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+
+  # ------------------ AdminOrg Peer -------------------
+  peer0.admin.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.admin
+    environment:
+      - CORE_PEER_ID=peer0.admin.example.com
+      - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.admin.example.com:8052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.admin.example.com:8051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.admin.example.com:8051
+      - CORE_PEER_LOCALMSPID=AdminMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "8051:8051"
+      - "8052:8052"
+    volumes:
+      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/var/hyperledger/peer/tls
+    
+  couchdb-admin:
+    image: hyperledger/fabric-couchdb:latest
+    container_name: couchdb-admin
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    volumes:
+      - couchdb-data-admin:/opt/couchdb/data
+
+  # ------------------ FarmerOrg Peer -------------------
+  peer0.farmer.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.farmer
+    environment:
+      - CORE_PEER_ID=peer0.farmer.example.com
+      - CORE_PEER_ADDRESS=peer0.farmer.example.com:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.farmer.example.com:9052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.farmer.example.com:9051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.farmer.example.com:9051
+      - CORE_PEER_LOCALMSPID=FarmerMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "9051:9051"
+      - "9052:9052"
+    volumes:
+      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/var/hyperledger/peer/tls
+
+  couchdb-farmer:
+    image: hyperledger/fabric-couchdb:latest
+    container_name: couchdb-farmer
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "6984:5984"
+    volumes:
+      - couchdb-data-farmer:/opt/couchdb/data
+
+  # ------------------ DistributorOrg Peer -------------------
+  peer0.distributor.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.distributor
+    environment:
+      - CORE_PEER_ID=peer0.distributor.example.com
+      - CORE_PEER_ADDRESS=peer0.distributor.example.com:10051
+      - CORE_PEER_LISTENADDRESS=0.0.0:10051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.distributor.example.com:10052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0:10052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.distributor.example.com:10051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.distributor.example.com:10051
+      - CORE_PEER_LOCALMSPID=DistributorMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "10051:10051"
+      - "10052:10052"
+    volumes:
+      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/var/hyperledger/peer/tls
+
+  couchdb-distributor:
+    image: hyperledger/fabric-couchdb:latest
+    container_name: couchdb-distributor
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "7984:5984"
+    volumes:
+      - couchdb-data-distributor:/opt/couchdb/data
+
+  # ------------------ RetailerOrg Peer -------------------
+  peer0.retailer.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.retailer
+    environment:
+      - CORE_PEER_ID=peer0.retailer.example.com
+      - CORE_PEER_ADDRESS=peer0.retailer.example.com:11051
+      - CORE_PEER_LISTENADDRESS=0.0.0:11051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.retailer.example.com:11052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0:11052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.retailer.example.com:11051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.retailer.example.com:11051
+      - CORE_PEER_LOCALMSPID=RetailerMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "11051:11051"
+      - "11052:11052"
+    volumes:
+      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/var/hyperledger/peer/tls
+    
+  couchdb-retailer:
+    image: hyperledger/fabric-couchdb:latest
+    container_name: couchdb-retailer
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "8984:5984"
+    volumes:
+      - couchdb-data-retailer:/opt/couchdb/data
+  
+volumes:
+  couchdb-data-admin:
+  couchdb-data-farmer:
+  couchdb-data-distributor:
+  couchdb-data-retailer:

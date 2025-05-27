@@ -1,6 +1,3 @@
-##########################################################################
-#     Section: Organizations
-##########################################################################
 Organizations:
   - &OrdererOrg
     Name: OrdererOrg
@@ -8,88 +5,99 @@ Organizations:
     MSPDir: crypto-config/ordererOrganizations/example.com/msp
     Policies:
       Readers:
-        Type: ImplicitMeta
-        Rule: "ANY Readers"
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
       Writers:
-        Type: ImplicitMeta
-        Rule: "ANY Writers"
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
       Admins:
-        Type: ImplicitMeta
-        Rule: "MAJORITY Admins"
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    AnchorPeers: []
 
   - &AdminOrg
     Name: AdminOrg
     ID: AdminMSP
     MSPDir: crypto-config/peerOrganizations/admin.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('AdminMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('AdminMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('AdminMSP.admin')"
     AnchorPeers:
       - Host: peer0.admin.example.com
         Port: 7051
-    Policies:
-      Readers:
-        Type: ImplicitMeta
-        Rule: "ANY Readers"
-      Writers:
-        Type: ImplicitMeta
-        Rule: "ANY Writers"
-      Admins:
-        Type: ImplicitMeta
-        Rule: "MAJORITY Admins"
   
   - &FarmerOrg
     Name: FarmerOrg
     ID: FarmerMSP
     MSPDir: crypto-config/peerOrganizations/farmer.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('FarmerMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('FarmerMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('FarmerMSP.admin')"
     AnchorPeers:
       - Host: peer0.farmer.example.com
         Port: 8051
-    Policies:
-      Readers:
-        Type: ImplicitMeta
-        Rule: "ANY Readers"
-      Writers:
-        Type: ImplicitMeta
-        Rule: "ANY Writers"
-      Admins:
-        Type: ImplicitMeta
-        Rule: "MAJORITY Admins"
   
   - &DistributorOrg
     Name: DistributorOrg
     ID: DistributorMSP
     MSPDir: crypto-config/peerOrganizations/distributor.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DistributorMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DistributorMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DistributorMSP.admin')"
     AnchorPeers:
       - Host: peer0.distributor.example.com
         Port: 9051
-    Policies:
-      Readers:
-        Type: ImplicitMeta
-        Rule: "ANY Readers"
-      Writers:
-        Type: ImplicitMeta
-        Rule: "ANY Writers"
-      Admins:
-        Type: ImplicitMeta
-        Rule: "MAJORITY Admins"
 
   - &RetailerOrg
     Name: RetailerOrg
     ID: RetailerMSP
     MSPDir: crypto-config/peerOrganizations/retailer.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('RetailerMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('RetailerMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('RetailerMSP.admin')"
     AnchorPeers:
       - Host: peer0.retailer.example.com
         Port: 10051
-    Policies:
-      Readers:
-        Type: ImplicitMeta
-        Rule: "ANY Readers"
-      Writers:
-        Type: ImplicitMeta
-        Rule: "ANY Writers"
-      Admins:
-        Type: ImplicitMeta
-        Rule: "MAJORITY Admins"
 
-Channel: &ChannelDefaults
+Orderer: &OrdererDefaults
+  OrdererType: solo
+  Addresses:
+    - orderer.example.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+    - *OrdererOrg
   Policies:
     Readers:
       Type: ImplicitMeta
@@ -104,23 +112,10 @@ Channel: &ChannelDefaults
       Type: ImplicitMeta
       Rule: "ANY Writers"
 
-##########################################################################
-#     Section: Orderer Genesis Profile
-##########################################################################
 Profiles:
   OrdererGenesis:
-    <<: *ChannelDefaults
     Orderer:
-      OrdererType: solo
-      Addresses:
-        - orderer.example.com:7050
-      BatchTimeout: 2s
-      BatchSize:
-        MaxMessageCount: 10
-        AbsoluteMaxBytes: 99 MB
-        PreferredMaxBytes: 512 KB
-      Organizations:
-        - *OrdererOrg
+      <<: *OrdererDefaults
     Consortiums:
       LettuceConsortium:
         Organizations:
@@ -128,9 +123,18 @@ Profiles:
           - *FarmerOrg
           - *DistributorOrg
           - *RetailerOrg
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
 
   LettuceChannel:
-    <<: *ChannelDefaults
     Consortium: LettuceConsortium
     Application:
       Organizations:
@@ -138,5 +142,28 @@ Profiles:
         - *FarmerOrg
         - *DistributorOrg
         - *RetailerOrg
+      Policies:
+        Readers:
+          Type: ImplicitMeta
+          Rule: "ANY Readers"
+        Writers:
+          Type: ImplicitMeta
+          Rule: "ANY Writers"
+        Admins:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Admins"
       Capabilities:
         V2_0: true
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+Capabilities:
+  Channel: 
+    V2_0: true
