@@ -129,8 +129,8 @@ services:
       - "8051:8051"
       - "8052:8052"
     volumes:
-      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/var/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/var/hyperledger/peer/tls
+      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/etc/hyperledger/peer/tls
     
   couchdb-admin:
     image: hyperledger/fabric-couchdb:latest
@@ -163,8 +163,8 @@ services:
       - "9051:9051"
       - "9052:9052"
     volumes:
-      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/var/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/var/hyperledger/peer/tls
+      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/etc/hyperledger/peer/tls
 
   couchdb-farmer:
     image: hyperledger/fabric-couchdb:latest
@@ -197,8 +197,8 @@ services:
       - "10051:10051"
       - "10052:10052"
     volumes:
-      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/var/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/var/hyperledger/peer/tls
+      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/peer/tls
 
   couchdb-distributor:
     image: hyperledger/fabric-couchdb:latest
@@ -231,8 +231,8 @@ services:
       - "11051:11051"
       - "11052:11052"
     volumes:
-      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/var/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/var/hyperledger/peer/tls
+      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/etc/hyperledger/peer/tls
     
   couchdb-retailer:
     image: hyperledger/fabric-couchdb:latest
