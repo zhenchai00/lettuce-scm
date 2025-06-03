@@ -27,6 +27,11 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [ca]
+    heathcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7054/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ AdminOrg Ca -------------------
   ca-admin:
@@ -47,6 +52,11 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [ca]
+    heathcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8054/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   
   # ------------------ FarmerOrg Ca -------------------
   ca-farmer:
@@ -67,6 +77,11 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [ca]
+    heathcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9054/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ DistributorOrg Ca -------------------
   ca-distributor:
@@ -87,6 +102,11 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [ca]
+    heathcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10054/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ RetailerOrg Ca -------------------
   ca-retailer:
@@ -107,6 +127,11 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [ca]
+    heathcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11054/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ ca-bootstrap -------------------
   ca-bootstrap:
@@ -117,11 +142,16 @@ services:
     working_dir: /root/lettuce-scm
     command: ["sh", "-c", "./scripts/01-ca-flow.sh && ./scripts/02-generate-artifacts.sh"]
     depends_on:
-      - ca-orderer
-      - ca-admin
-      - ca-farmer
-      - ca-distributor
-      - ca-retailer
+      ca-orderer:
+        condition: service_healthy
+      ca-admin:
+        condition: service_healthy
+      ca-farmer:
+        condition: service_healthy
+      ca-distributor:
+        condition: service_healthy
+      ca-retailer:
+        condition: service_healthy
     profiles: [ca]
 
   # ------------------ Orderer -------------------
@@ -154,7 +184,8 @@ services:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.admin
     depends_on:
-      - couchdb-admin
+      couchdb-admin:
+        condition: service_healthy
     environment:
       - CORE_PEER_ID=peer0.admin.example.com
       - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
@@ -193,13 +224,19 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [peer]
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'Checking CouchDB' && nc -zv localhost 5984 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ FarmerOrg Peer -------------------
   peer0.farmer.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.farmer
     depends_on:
-      - couchdb-farmer
+      couchdb-farmer:
+        condition: service_healthy
     environment:
       - CORE_PEER_ID=peer0.farmer.example.com
       - CORE_PEER_ADDRESS=peer0.farmer.example.com:9051
@@ -238,13 +275,19 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [peer]
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'Checking CouchDB' && nc -zv localhost 5984 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ DistributorOrg Peer -------------------
   peer0.distributor.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.distributor
     depends_on:
-      - couchdb-distributor
+      couchdb-distributor:
+        condition: service_healthy
     environment:
       - CORE_PEER_ID=peer0.distributor.example.com
       - CORE_PEER_ADDRESS=peer0.distributor.example.com:10051
@@ -283,13 +326,19 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [peer]
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'Checking CouchDB' && nc -zv localhost 5984 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # ------------------ RetailerOrg Peer -------------------
   peer0.retailer.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.retailer
     depends_on:
-      - couchdb-retailer
+      couchdb-retailer:
+        condition: service_healthy
     environment:
       - CORE_PEER_ID=peer0.retailer.example.com
       - CORE_PEER_ADDRESS=peer0.retailer.example.com:11051
@@ -328,3 +377,8 @@ services:
     networks:
       - lettuce-scm-network
     profiles: [peer]
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'Checking CouchDB' && nc -zv localhost 5984 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
