@@ -167,3 +167,7 @@ Profiles:
 Capabilities:
   Channel: 
     V2_0: true
+  Orderer:
+    V2_0: true
+  Application:
+    V2_0: true

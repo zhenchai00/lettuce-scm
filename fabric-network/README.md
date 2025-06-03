@@ -52,5 +52,40 @@ docker-compose down
 docker-compose up -d
 
 docker-compose up -d ca-orderer ca-admin ca-farmer ca-distributor ca-retailer
+docker-compose up -d orderer.example.com peer0.farmer.example.com peer0.distributor.example.com peer0.retailer.example.com
 
 ```
+
+
+couchdb admin
+```markdown
+http://localhost:5984/_utils/
+admin: admin
+password: adminpw
+```
+
+## URLs for Accessing the Network
+| URL | Description |
+|-----|-------------|
+| http://localhost:5984/_utils/ | CouchDB Admin UI for Admin peer |
+| http://localhost:7054/health | Health check for CA server (Orderer) |
+
+
+
+## Docker Containers and Ports
+| Docker Container | Port | Description |
+|------------------|------|-------------|
+| ca-orderer       | 7054 | CA server for Orderer organization |
+| ca-admin         | 8054 | CA server for Admin organization |
+| ca-farmer        | 9054 | CA server for Farmer organization |
+| ca-distributor   | 10054| CA server for Distributor organization |
+| ca-retailer      | 11054| CA server for Retailer organization |
+| admin couchdb  | 5984 | CouchDB instance for Admin peer |
+| farmer couchdb  | 6985 | CouchDB instance for Farmer peer |
+| distributor couchdb | 7985 | CouchDB instance for Distributor peer |
+| retailer couchdb | 8985 | CouchDB instance for Retailer peer |
+| orderer          | 7050 | Orderer node |
+| peer0.admin      | 8051 | Peer node for Admin organization |
+| peer0.farmer     | 9051 | Peer node for Farmer organization |
+| peer0.distributor| 10051 | Peer node for Distributor organization |
+| peer0.retailer   | 11051 | Peer node for Retailer organization |

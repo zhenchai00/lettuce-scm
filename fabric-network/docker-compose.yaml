@@ -1,3 +1,12 @@
+networks:
+  lettuce-scm-network:
+  
+volumes:
+  couchdb-data-admin:
+  couchdb-data-farmer:
+  couchdb-data-distributor:
+  couchdb-data-retailer:
+
 services:
   # ------------------ OrdererOrg Ca -------------------
   ca-orderer:
@@ -15,7 +24,9 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
-    profiles: [ca-server]
+    networks:
+      - lettuce-scm-network
+    profiles: [ca]
 
   # ------------------ AdminOrg Ca -------------------
   ca-admin:
@@ -33,7 +44,9 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
-    profiles: [ca-server]
+    networks:
+      - lettuce-scm-network
+    profiles: [ca]
   
   # ------------------ FarmerOrg Ca -------------------
   ca-farmer:
@@ -51,7 +64,9 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
-    profiles: [ca-server]
+    networks:
+      - lettuce-scm-network
+    profiles: [ca]
 
   # ------------------ DistributorOrg Ca -------------------
   ca-distributor:
@@ -69,7 +84,9 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
-    profiles: [ca-server]
+    networks:
+      - lettuce-scm-network
+    profiles: [ca]
 
   # ------------------ RetailerOrg Ca -------------------
   ca-retailer:
@@ -87,12 +104,32 @@ services:
         fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
         fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
       "
-    profiles: [ca-server]
+    networks:
+      - lettuce-scm-network
+    profiles: [ca]
+
+  # ------------------ ca-bootstrap -------------------
+  ca-bootstrap:
+    image: hyperledger/fabric-tool:latest
+    container_name: ca-bootstrap
+    volumes:
+      - ./:root/lettuce-scm
+    working_dir: /root/lettuce-scm
+    command: ["sh", "-c", "./scripts/01-ca-flow.sh && ./scripts/02-generate-artifacts.sh"]
+    depends_on:
+      - ca-orderer
+      - ca-admin
+      - ca-farmer
+      - ca-distributor
+      - ca-retailer
+    profiles: [ca]
 
   # ------------------ Orderer -------------------
   orderer.example.com:
     image: hyperledger/fabric-orderer:latest
     container_name: orderer
+    depends_on:
+      - ca-orderer
     environment:
       - ORDERER_GENERAL_LOGLEVEL=DEBUG
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
@@ -108,11 +145,16 @@ services:
       - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
 
   # ------------------ AdminOrg Peer -------------------
   peer0.admin.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.admin
+    depends_on:
+      - couchdb-admin
     environment:
       - CORE_PEER_ID=peer0.admin.example.com
       - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
@@ -123,6 +165,9 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.admin.example.com:8051
       - CORE_PEER_LOCALMSPID=AdminMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-admin:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
@@ -131,7 +176,10 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
       - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/etc/hyperledger/peer/tls
-    
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
+
   couchdb-admin:
     image: hyperledger/fabric-couchdb:latest
     container_name: couchdb-admin
@@ -142,11 +190,16 @@ services:
       - "5984:5984"
     volumes:
       - couchdb-data-admin:/opt/couchdb/data
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
 
   # ------------------ FarmerOrg Peer -------------------
   peer0.farmer.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.farmer
+    depends_on:
+      - couchdb-farmer
     environment:
       - CORE_PEER_ID=peer0.farmer.example.com
       - CORE_PEER_ADDRESS=peer0.farmer.example.com:9051
@@ -157,6 +210,9 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.farmer.example.com:9051
       - CORE_PEER_LOCALMSPID=FarmerMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-farmer:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
@@ -165,6 +221,9 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
       - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/etc/hyperledger/peer/tls
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
 
   couchdb-farmer:
     image: hyperledger/fabric-couchdb:latest
@@ -176,11 +235,16 @@ services:
       - "6984:5984"
     volumes:
       - couchdb-data-farmer:/opt/couchdb/data
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
 
   # ------------------ DistributorOrg Peer -------------------
   peer0.distributor.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.distributor
+    depends_on:
+      - couchdb-distributor
     environment:
       - CORE_PEER_ID=peer0.distributor.example.com
       - CORE_PEER_ADDRESS=peer0.distributor.example.com:10051
@@ -191,6 +255,9 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.distributor.example.com:10051
       - CORE_PEER_LOCALMSPID=DistributorMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-distributor:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
@@ -199,6 +266,9 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/peer/tls
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
 
   couchdb-distributor:
     image: hyperledger/fabric-couchdb:latest
@@ -210,11 +280,16 @@ services:
       - "7984:5984"
     volumes:
       - couchdb-data-distributor:/opt/couchdb/data
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
 
   # ------------------ RetailerOrg Peer -------------------
   peer0.retailer.example.com:
     image: hyperledger/fabric-peer:latest
     container_name: peer0.retailer
+    depends_on:
+      - couchdb-retailer
     environment:
       - CORE_PEER_ID=peer0.retailer.example.com
       - CORE_PEER_ADDRESS=peer0.retailer.example.com:11051
@@ -225,6 +300,9 @@ services:
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.retailer.example.com:11051
       - CORE_PEER_LOCALMSPID=RetailerMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-retailer:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
@@ -233,6 +311,9 @@ services:
     volumes:
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/etc/hyperledger/peer/tls
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
     
   couchdb-retailer:
     image: hyperledger/fabric-couchdb:latest
@@ -244,9 +325,6 @@ services:
       - "8984:5984"
     volumes:
       - couchdb-data-retailer:/opt/couchdb/data
-  
-volumes:
-  couchdb-data-admin:
-  couchdb-data-farmer:
-  couchdb-data-distributor:
-  couchdb-data-retailer:
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]
