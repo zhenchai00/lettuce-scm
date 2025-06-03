@@ -36,4 +36,4 @@ ca-server/retailer/msp/
 *.tar.gz
 
 # Optional: Include channel artifacts
-!channel-artifacts/
+channel-artifacts/
