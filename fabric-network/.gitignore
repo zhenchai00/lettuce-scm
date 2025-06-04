@@ -21,6 +21,7 @@ bin/
 builders/
 crypto-config/
 ca-server/*/msp/
+ca-server/*/fabric-ca-server.db/
 channel-artifacts/
 
 # Include specific configuration files
