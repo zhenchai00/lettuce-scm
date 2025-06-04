@@ -81,9 +81,9 @@ password: adminpw
 | ca-distributor   | 10054| CA server for Distributor organization |
 | ca-retailer      | 11054| CA server for Retailer organization |
 | admin couchdb  | 5984 | CouchDB instance for Admin peer |
-| farmer couchdb  | 6985 | CouchDB instance for Farmer peer |
-| distributor couchdb | 7985 | CouchDB instance for Distributor peer |
-| retailer couchdb | 8985 | CouchDB instance for Retailer peer |
+| farmer couchdb  | 6984 | CouchDB instance for Farmer peer |
+| distributor couchdb | 7984 | CouchDB instance for Distributor peer |
+| retailer couchdb | 8984 | CouchDB instance for Retailer peer |
 | orderer          | 7050 | Orderer node |
 | peer0.admin      | 8051 | Peer node for Admin organization |
 | peer0.farmer     | 9051 | Peer node for Farmer organization |

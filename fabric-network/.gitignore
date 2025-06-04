@@ -13,17 +13,15 @@
 # Dependency directories
 node_modules/
 package-lock.json
+pnpm-lock.yaml
 
 # Fabric binaries and dynamic/generated files
 external-chaincode/
-
-# Generated crypto material
+bin/
+builders/
 crypto-config/
-ca-server/orderer/msp/
-ca-server/admin/msp/
-ca-server/farmer/msp/
-ca-server/distributor/msp/
-ca-server/retailer/msp/
+ca-server/*/msp/
+channel-artifacts/
 
 # Include specific configuration files
 !ca-server/orderer/fabric-ca-server-config.yaml
@@ -35,5 +33,7 @@ ca-server/retailer/msp/
 # Omit temporary/generated artifacts
 *.tar.gz
 
-# Optional: Include channel artifacts
-channel-artifacts/
+# Ignore logs and tmp
+*.log
+tmp/
+logs/
