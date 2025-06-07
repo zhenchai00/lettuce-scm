@@ -32,7 +32,7 @@ Organizations:
     AnchorPeers:
       - Host: peer0.admin.example.com
         Port: 7051
-  
+
   - &FarmerOrg
     Name: FarmerOrg
     ID: FarmerMSP
@@ -50,7 +50,7 @@ Organizations:
     AnchorPeers:
       - Host: peer0.farmer.example.com
         Port: 8051
-  
+
   - &DistributorOrg
     Name: DistributorOrg
     ID: DistributorMSP
@@ -134,12 +134,41 @@ Profiles:
         Type: ImplicitMeta
         Rule: "MAJORITY Admins"
 
-  LettuceChannel:
+  FarmerDistributorChannel:
     Consortium: LettuceConsortium
     Application:
       Organizations:
         - *AdminOrg
         - *FarmerOrg
+        - *DistributorOrg
+      Policies:
+        Readers:
+          Type: ImplicitMeta
+          Rule: "ANY Readers"
+        Writers:
+          Type: ImplicitMeta
+          Rule: "ANY Writers"
+        Admins:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Admins"
+      Capabilities:
+        V2_0: true
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+  
+  DistributorRetailerChannel:
+    Consortium: LettuceConsortium
+    Application:
+      Organizations:
+        - *AdminOrg
         - *DistributorOrg
         - *RetailerOrg
       Policies:
@@ -164,8 +193,38 @@ Profiles:
       Admins:
         Type: ImplicitMeta
         Rule: "MAJORITY Admins"
+  
+  RetailerConsumerChannel:
+    Consortium: LettuceConsortium
+    Application:
+      Organizations:
+        - *AdminOrg
+        - *RetailerOrg
+      Policies:
+        Readers:
+          Type: ImplicitMeta
+          Rule: "ANY Readers"
+        Writers:
+          Type: ImplicitMeta
+          Rule: "ANY Writers"
+        Admins:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Admins"
+      Capabilities:
+        V2_0: true
+    Policies:
+      Readers:
+        Type: ImplicitMeta
+        Rule: "ANY Readers"
+      Writers:
+        Type: ImplicitMeta
+        Rule: "ANY Writers"
+      Admins:
+        Type: ImplicitMeta
+        Rule: "MAJORITY Admins"
+
 Capabilities:
-  Channel: 
+  Channel:
     V2_0: true
   Orderer:
     V2_0: true

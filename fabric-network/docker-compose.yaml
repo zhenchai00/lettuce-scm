@@ -12,20 +12,23 @@ services:
   ca-orderer:
     image: hyperledger/fabric-ca:latest
     container_name: ca-orderer
-    ports:
-      - "7054:7054"
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-orderer
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
+    ports:
+      - "7054:7054"
     volumes:
       - ./ca-server/orderer:/etc/hyperledger/fabric-ca-server
-    command: >
-      sh -c "
-        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
-        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
-        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
-      "
     networks:
       - lettuce-scm-network
+    # command: >
+    #   sh -c "
+    #     rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+    #     fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+    #     fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+    #   "
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     profiles: [ca]
     healthcheck:
       test: ["CMD", "sh", "-s", "sleep 10 && curl -f http://localhost:7054/cainfo"]       # health check for ca server, port is following container port
@@ -41,14 +44,17 @@ services:
       - "8054:7054"
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-admin
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
     volumes:
       - ./ca-server/admin:/etc/hyperledger/fabric-ca-server
-    command: >
-      sh -c "
-        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
-        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
-        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
-      "
+    # command: >
+    #   sh -c "
+    #     rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+    #     fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+    #     fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+    #   "
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     networks:
       - lettuce-scm-network
     profiles: [ca]
@@ -66,14 +72,17 @@ services:
       - "9054:7054"
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-farmer
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
     volumes:
       - ./ca-server/farmer:/etc/hyperledger/fabric-ca-server
-    command: >
-      sh -c "
-        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
-        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
-        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
-      "
+    # command: >
+    #   sh -c "
+    #     rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+    #     fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+    #     fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+    #   "
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     networks:
       - lettuce-scm-network
     profiles: [ca]
@@ -91,14 +100,17 @@ services:
       - "10054:7054"
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-distributor
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
     volumes:
       - ./ca-server/distributor:/etc/hyperledger/fabric-ca-server
-    command: >
-      sh -c "
-        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
-        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
-        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
-      "
+    # command: >
+    #   sh -c "
+    #     rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+    #     fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+    #     fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+    #   "
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     networks:
       - lettuce-scm-network
     profiles: [ca]
@@ -116,14 +128,17 @@ services:
       - "11054:7054"
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-retailer
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
     volumes:
       - ./ca-server/retailer:/etc/hyperledger/fabric-ca-server
-    command: >
-      sh -c "
-        rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
-        fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
-        fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
-      "
+    # command: >
+    #   sh -c "
+    #     rm -rf /etc/hyperledger/fabric-ca-server/fabric-ca-server.db /etc/hyperledger/fabric-ca-server/msp &&
+    #     fabric-ca-server init --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml &&
+    #     fabric-ca-server start --cfg.identities.allowremove=true --tls.enabled=false --config /etc/hyperledger/fabric-ca-server/fabric-ca-server-config.yaml
+    #   "
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     networks:
       - lettuce-scm-network
     profiles: [ca]
@@ -172,7 +187,7 @@ services:
     volumes:
       - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      # - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -204,7 +219,7 @@ services:
       - "8052:8052"
     volumes:
       - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/etc/hyperledger/peer/tls
+      # - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/etc/hyperledger/peer/tls
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -255,7 +270,7 @@ services:
       - "9052:9052"
     volumes:
       - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/etc/hyperledger/peer/tls
+      # - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/etc/hyperledger/peer/tls
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -306,7 +321,7 @@ services:
       - "10052:10052"
     volumes:
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/peer/tls
+      # - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/peer/tls
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -357,7 +372,7 @@ services:
       - "11052:11052"
     volumes:
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/etc/hyperledger/peer/tls
+      # - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/etc/hyperledger/peer/tls
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -380,3 +395,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+
+  # ------------------ CLI Environment -------------------
+  cli:
+    image: hyperledger/fabric-tools:latest
+    container_name: cli
+    tty: true
+    stdin_open: true
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_LOCALMSPID=AdminMSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp
+      - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: /bin/bash
+    volumes:
+      - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/crypto-config
+      - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/channel-artifacts
+      - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/chaincode
+      - ./config:/opt/gopath/src/github.com/hyperledger/fabric/config
+      - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/scripts
+    networks:
+      - lettuce-scm-network
+    profiles: [cli]

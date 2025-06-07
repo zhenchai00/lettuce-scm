@@ -1,145 +1,115 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CA_HOST=localhost
-ADMIN_USER=admin
-ADMIN_PW=adminpw
+export FABRIC_CA_CLIENT_HOME=${ROOT}/fabric-ca-client
 
-export FABRIC_CA_CLIENT_HOME=$ROOT/fabric-ca-client      # isolate client state
-
-# 1) Bootstrap-admin enrollment into the same MSP folders peers/orderers will live in
+# 1) Enroll Fabric-CA root admin into org MSP
 enroll_ca_admin() {
-  ORG_KEY=$1      # e.g. "orderer" or "farmer"
-  CANAME=$2       # e.g. "ca-orderer"
-  PORT=$3         # 7054, 9054, …
-  MSP_PATH=$4     # e.g. "$ROOT/crypto-config/ordererOrganizations/example.com/msp"
+  ORG_KEY=$1       # e.g. "admin"
+  CA_NAME=$2       # e.g. "ca-admin"
+  PORT=$3          # e.g. 8054
+  MSP_PATH=$4      # crypto-config/peerOrganizations/admin.example.com/msp
+  CA_TLS_OPTS="--tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem"
 
-  echo "⏳ Enrolling CA admin for ${ORG_KEY}…"
   fabric-ca-client enroll \
-    -u http://${ADMIN_USER}:${ADMIN_PW}@${CA_HOST}:${PORT} \
-    --caname ${CANAME} \
+    -u http://admin:adminpw@${CA_HOST}:${PORT} \
+    --caname ${CA_NAME} \
     --mspdir ${MSP_PATH} \
-    --tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem
+    ${CA_TLS_OPTS}
 
-  # copy NodeOUs config & ca root into that MSP
-  cp ${ROOT}/config/ca-config.yaml ${MSP_PATH}/config.yaml
+  # Copy in our msp-config (NodeOUs) + ensure cacerts/tlscacerts
+  cp ${ROOT}/config/msp-config.yaml ${MSP_PATH}/config.yaml
   mkdir -p ${MSP_PATH}/{cacerts,tlscacerts}
   cp ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem ${MSP_PATH}/cacerts/
   cp ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem ${MSP_PATH}/tlscacerts/
-
-  echo "✔ CA admin MSP at ${MSP_PATH}"
 }
 
-# 2) Register identities, pointing at the exact same MSP_PATH
-register_identity() {
-  ORG_KEY=$1
-  CANAME=$2
+# 2) Register + enroll Org Admin user
+enroll_org_admin() {
+  ORG_KEY=$1           # "admin", "farmer", ...
+  CA_NAME=$2           # "ca-admin", …
   PORT=$3
-  ID_NAME=$4
-  ID_SECRET=$5
-  ID_TYPE=$6
-  AFFIL=$7
-  MSP_PATH=$8
+  MSP_ORG=$4           # crypto-config/peerOrganizations/admin.example.com/msp
+  MSP_USER=$5          # crypto-config/.../users/Admin@.../msp
+  CA_TLS_OPTS="--tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem"
 
-  echo "⏳ Register ${ID_NAME}…"
   fabric-ca-client register \
-    --url http://${ADMIN_USER}:${ADMIN_PW}@${CA_HOST}:${PORT} \
-    --caname ${CANAME} \
-    --id.name ${ID_NAME} \
-    --id.secret ${ID_SECRET} \
-    --id.type ${ID_TYPE} \
-    --id.affiliation ${AFFIL} \
-    --mspdir ${MSP_PATH} \
-    --tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem
+    --caname ${CA_NAME} \
+    --id.name adminUser \
+    --id.secret adminUserpw \
+    --id.type admin \
+    --id.affiliation org1 \
+    --url http://admin:adminpw@${CA_HOST}:${PORT} \
+    ${CA_TLS_OPTS}
 
-  echo "✔ Registered ${ID_NAME}"
-}
-
-# 3) Enroll each registered identity into its own MSP folder
-enroll_identity() {
-  ORG_KEY=$1
-  CANAME=$2
-  PORT=$3
-  ID_NAME=$4
-  ID_SECRET=$5
-  MSP_PATH=$6
-
-  echo "⏳ Enrolling ${ID_NAME}…"
+  # Enroll into user folder, request OU=admin
+  mkdir -p ${MSP_USER}
   fabric-ca-client enroll \
-    -u http://${ID_NAME}:${ID_SECRET}@${CA_HOST}:${PORT} \
-    --caname ${CANAME} \
-    --csr.cn ${ID_NAME} \
-    --mspdir ${MSP_PATH} \
-    --tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem
+    -u http://adminUser:adminUserpw@${CA_HOST}:${PORT} \
+    --caname ${CA_NAME} \
+    --csr.cn Admin@${ORG_KEY}.example.com \
+    --csr.attrs "hf.OU=admin" \
+    --mspdir ${MSP_USER} \
+    ${CA_TLS_OPTS}
 
-  echo "✔ MSP ready for ${ID_NAME} at ${MSP_PATH}"
+  # Copy the signed cert into the org-level MSP’s admincerts
+  mkdir -p ${MSP_ORG}/admincerts
+  cp ${MSP_USER}/signcerts/* ${MSP_ORG}/admincerts/
 }
 
-# ──── MAIN ────
+# 3) Register + enroll peer node
+enroll_peer_node() {
+  ORG_KEY=$1
+  CA_NAME=$2
+  PORT=$3
+  MSP_PEER=$4  # crypto-config/.../peers/peer0.<org>.example.com/msp
+  CA_TLS_OPTS="--tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem"
 
-# create folders
-mkdir -p \
-  ${ROOT}/crypto-config/ordererOrganizations/example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
+  fabric-ca-client register \
+    --caname ${CA_NAME} \
+    --id.name peer0 \
+    --id.secret peer0pw \
+    --id.type peer \
+    --id.affiliation org1 \
+    --url http://admin:adminpw@${CA_HOST}:${PORT} \
+    ${CA_TLS_OPTS}
 
-mkdir -p $ROOT/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
+  fabric-ca-client enroll \
+    -u http://peer0:peer0pw@${CA_HOST}:${PORT} \
+    --caname ${CA_NAME} \
+    --csr.cn peer0.${ORG_KEY}.example.com \
+    --mspdir ${MSP_PEER} \
+    ${CA_TLS_OPTS}
 
-# (1) bootstrap admins
-enroll_ca_admin orderer     ca-orderer     7054    ${ROOT}/crypto-config/ordererOrganizations/example.com/msp
-enroll_ca_admin admin       ca-admin       8054    ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
-enroll_ca_admin farmer      ca-farmer      9054    ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
-enroll_ca_admin distributor ca-distributor 10054   ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
-enroll_ca_admin retailer    ca-retailer    11054   ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
+  # Copy the peer’s own cert into its admincerts so it can sign leadership ops
+  mkdir -p ${MSP_PEER}/admincerts
+  cp ${MSP_PEER}/signcerts/* ${MSP_PEER}/admincerts/
+}
 
-# (2) register
-register_identity orderer       ca-orderer      7054  orderer           ordererpw           orderer         orderer.org1   ${ROOT}/crypto-config/ordererOrganizations/example.com/msp
-register_identity orderer       ca-orderer      7054  ordererAdmin      ordererAdminpw      admin           orderer.org1   ${ROOT}/crypto-config/ordererOrganizations/example.com/msp
-register_identity admin         ca-admin        8054  peer0             peer0pw             peer            admin.org1     ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
-register_identity admin         ca-admin        8054  adminUser         adminUserpw         admin           admin.org1     ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
-register_identity farmer        ca-farmer       9054  peer0             peer0pw             peer            farmer.org1     ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
-register_identity farmer        ca-farmer       9054  farmerAdmin       farmerAdminpw       admin           farmer.org1     ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
-register_identity distributor   ca-distributor  10054  peer0            peer0pw             peer            distributor.org1     ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
-register_identity distributor   ca-distributor  10054  distributorAdmin distributorAdminpw  admin           distributor.org1     ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
-register_identity retailer      ca-retailer     11054  peer0            peer0pw             peer            retailer.org1     ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
-register_identity retailer      ca-retailer     11054  retailerAdmin    retailerAdminpw     admin           retailer.org1     ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
+# ── Main ──
+# AdminOrg
+enroll_ca_admin admin   ca-admin   8054  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
+enroll_org_admin admin  ca-admin   8054  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp \
+                                   ${ROOT}/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp
+enroll_peer_node admin  ca-admin   8054  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp
 
-# (3) enroll each
-enroll_identity  orderer        ca-orderer      7054    orderer             ordererpw           ${ROOT}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
-enroll_identity  orderer        ca-orderer      7054    ordererAdmin        ordererAdminpw      ${ROOT}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
-cp \
-  ${ROOT}/crypto-config/ordererOrganizations/example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
+# FarmerOrg
+enroll_ca_admin farmer   ca-farmer  9054  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
+enroll_org_admin farmer   ca-farmer  9054  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp \
+                                   ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp
+enroll_peer_node farmer   ca-farmer  9054  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp
 
-enroll_identity  admin          ca-admin        8054    peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp
-enroll_identity  admin          ca-admin        8054    adminUser           adminUserpw         ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp/admincerts/
+# DistributorOrg
+enroll_ca_admin distributor ca-distributor 10054 ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
+enroll_org_admin distributor ca-distributor 10054 ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp \
+                                   ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp
+enroll_peer_node distributor ca-distributor 10054 ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp
 
-enroll_identity  farmer         ca-farmer       9054    peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp
-enroll_identity  farmer         ca-farmer       9054    farmerAdmin         farmerAdminpw       ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp/admincerts/
+# RetailerOrg
+enroll_ca_admin retailer ca-retailer 11054 ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
+enroll_org_admin retailer ca-retailer 11054 ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp \
+                                   ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp
+enroll_peer_node retailer ca-retailer 11054 ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp
 
-enroll_identity  distributor    ca-distributor  10054   peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp
-enroll_identity  distributor    ca-distributor  10054   distributorAdmin    distributorAdminpw  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp/admincerts/
-
-enroll_identity  retailer       ca-retailer     11054   peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp
-enroll_identity  retailer       ca-retailer     11054   retailerAdmin       retailerAdminpw     ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp/admincerts/
-
-echo "🎉 All bootstrap-admin, register, and enroll steps complete!"
+echo "✔ All CA bootstrap, org MSPs, Org Admins, and peer nodes enrolled."
