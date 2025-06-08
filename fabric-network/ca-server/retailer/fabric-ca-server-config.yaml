@@ -1,33 +1,54 @@
-version: 1.1.0
-
+# This file is for the Retailer Organization's CA
+version: 1.5.7
+port: 11054
+debug: true
+tls:
+  enabled: false
+  certfile:
+  keyfile:
 ca:
   name: ca-retailer
-  # keyfile: msp/keystore/key.pem       # auto-generated on first start
-  # certfile: msp/signcerts/cert.pem    # auto-generated on first start
-
-server:
-  port: 11054
-
-tls: 
-  enabled: false
-
-# which user types & org-affiliations are allowed to register
+  keyfile:
+  certfile:
+crl:
+  expiry: 24h
 affiliations:
   retailer:
     - org1
-  
-# Identities pre-registered in the CA
 registry:
   maxenrollments: -1
-  allowedremove: true
   identities:
     - name: admin
       pass: adminpw
       type: client
-      affiliation: retailer.org1
+      affiliation: retailer.org1 # Affiliation for Retailer organization
       attrs:
         hf.Registrar.Roles: "*"
         hf.Registrar.DelegateRoles: "*"
         hf.Revoker: true
         hf.GenCRL: true
         hf.Registrar.Attributes: "*"
+db:
+  type: sqlite3
+  datasource: fabric-ca-server.db
+intermediate:
+  parentserver:
+    url:
+    CAName:
+signing:
+  default:
+    usage:
+      - digital signature
+      - key encipherment
+    expiry: 8760h
+  profiles:
+    tls:
+      usage:
+        - signing
+        - key encipherment
+        - server auth
+        - client auth
+      expiry: 8760h
+      caconstraint:
+        isca: false
+        maxpathlen: -1
