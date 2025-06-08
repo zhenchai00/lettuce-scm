@@ -1,3 +1,4 @@
+---
 Organizations:
   - &OrdererOrg
     Name: OrdererOrg
@@ -87,6 +88,14 @@ Organizations:
       - Host: peer0.retailer.example.com
         Port: 10051
 
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
+
 Orderer: &OrdererDefaults
   OrdererType: solo
   Addresses:
@@ -116,6 +125,9 @@ Profiles:
   OrdererGenesis:
     Orderer:
       <<: *OrdererDefaults
+    Capabilities:
+      Orderer: true
+      Channel: true
     Consortiums:
       LettuceConsortium:
         Organizations:
@@ -152,7 +164,7 @@ Profiles:
           Type: ImplicitMeta
           Rule: "MAJORITY Admins"
       Capabilities:
-        V2_0: true
+        <<: *ApplicationCapabilities
     Policies:
       Readers:
         Type: ImplicitMeta
@@ -163,7 +175,7 @@ Profiles:
       Admins:
         Type: ImplicitMeta
         Rule: "MAJORITY Admins"
-  
+
   DistributorRetailerChannel:
     Consortium: LettuceConsortium
     Application:
@@ -182,7 +194,7 @@ Profiles:
           Type: ImplicitMeta
           Rule: "MAJORITY Admins"
       Capabilities:
-        V2_0: true
+        <<: *ApplicationCapabilities
     Policies:
       Readers:
         Type: ImplicitMeta
@@ -193,7 +205,7 @@ Profiles:
       Admins:
         Type: ImplicitMeta
         Rule: "MAJORITY Admins"
-  
+
   RetailerConsumerChannel:
     Consortium: LettuceConsortium
     Application:
@@ -211,7 +223,7 @@ Profiles:
           Type: ImplicitMeta
           Rule: "MAJORITY Admins"
       Capabilities:
-        V2_0: true
+        <<: *ApplicationCapabilities
     Policies:
       Readers:
         Type: ImplicitMeta
@@ -222,11 +234,3 @@ Profiles:
       Admins:
         Type: ImplicitMeta
         Rule: "MAJORITY Admins"
-
-Capabilities:
-  Channel:
-    V2_0: true
-  Orderer:
-    V2_0: true
-  Application:
-    V2_0: true
