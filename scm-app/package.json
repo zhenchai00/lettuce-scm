@@ -11,7 +11,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@hyperledger/fabric-gateway": "^1.7.1",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^6.9.0",
     "@prisma/extension-accelerate": "^1.3.0",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-collapsible": "^1.1.10",

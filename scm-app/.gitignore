@@ -44,3 +44,4 @@ next-env.d.ts
 # prisma recommended to ignore
 # https://www.prisma.io/docs/orm/prisma-schema/overview/generators#3-exclude-the-generated-directory-from-version-control
 /src/generated/prisma
+/generated/prisma

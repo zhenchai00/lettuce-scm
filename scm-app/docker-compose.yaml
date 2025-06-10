@@ -1,7 +1,7 @@
 services:
   database:
     image: postgres
-    container_name: -postgresql
+    container_name: postgresql
     environment:
       POSTGRES_DB: scm
       POSTGRES_USER: postgres
