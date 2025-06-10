@@ -1,62 +1,59 @@
-import { getToken } from "next-auth/jwt"
-import { NextRequest, NextResponse } from "next/server"
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS: string[] = [
-    "/api/auth",
-    "/api/public",
-]
+const PUBLIC_PATHS: string[] = ["/api/auth", "/api/public", "_next", "/static"];
 
 const ROLE_RULES: { [pathPrefix: string]: string[] } = {
     "/api/admin": ["admin"],
     "/api/farmer": ["admin", "farmer"],
     "/api/distributor": ["admin", "distributor"],
     "/api/retailer": ["admin", "retailer"],
-}
+    "/admin": ["admin"],
+    "/farmer": ["admin", "farmer"],
+    "/distributor": ["admin", "distributor"],
+    "/retailer": ["admin", "retailer"],
+};
 
 export const middleware = async (req: NextRequest) => {
-    const { pathname } = req.nextUrl
-
-    // skip non-api routes
-    if (!pathname.startsWith("/api")) {
-        return NextResponse.next()
-    }
+    const { pathname } = req.nextUrl;
 
     // allow next-auth own routes + any explicitly public routes
     if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
-        return NextResponse.next()
+        return NextResponse.next();
     }
 
-    // grab token (JWT) from request (cookies)
-    const token = await getToken({
-        req,
-        secret: process.env.NEXTAUTH_SECRET,
-    })
-
-    // if no token, redirect to login page
+    // Check for token (JWT)
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     if (!token) {
-        return new NextResponse(
-            JSON.stringify({ error: "Unauthorized" }),
-            { status: 401, headers: { "Content-Type": "application/json" } }
-        )
+        // Redirect to login if not authenticated
+        const loginUrl = new URL("/auth/login", req.url);
+        return NextResponse.redirect(loginUrl);
     }
 
-    const rule = Object.entries(ROLE_RULES).find(([pathPrefix]) =>
-        pathname.startsWith(pathPrefix)
-    )
-    if (rule) {
-        const [prefix, allowedRoles] = rule;
+    // Find a matching role rule for this path
+    const match = Object.entries(ROLE_RULES).find(([prefix]) =>
+        pathname.startsWith(prefix)
+    );
+    if (match) {
+        const [prefix, allowedRoles] = match;
         if (!allowedRoles.includes(token.role as string)) {
+            // Forbidden
             return new NextResponse(
-                JSON.stringify({ error: "Forbidden: Invalid / Insufficient role" }),
+                JSON.stringify({ error: "Forbidden: Insufficient role" }),
                 { status: 403, headers: { "Content-Type": "application/json" } }
-            )
+            );
         }
     }
+
     return NextResponse.next();
-}
+};
 
 export const config = {
     matcher: [
         "/api/:path*",
+        "/admin/:path*",
+        "/farmer/:path*",
+        "/distributor/:path*",
+        "/retailer/:path*",
     ],
-}
+};

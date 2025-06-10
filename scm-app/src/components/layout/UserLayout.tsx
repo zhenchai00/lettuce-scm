@@ -3,16 +3,17 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "@/components/nav/AppSidebar";
 import SidebarHeader from "@/components/nav/HeaderSidebar";
 
-interface DashboardLayoutProps {
+interface UserLayoutProps {
     children: ReactNode;
+    title?: string;
 }
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const UserLayout = ({ children, title }: UserLayoutProps) => {
     return (
         <SidebarProvider defaultOpen={true}>
             <AppSidebar />
             <div className=" min-h-screen flex-1 transition-margin duration-200" id="dashboard-layout">
-                <SidebarHeader />
+                <SidebarHeader title={title} />
                 <div className="flex-1 p-4">
                     {children}
                 </div>
@@ -21,4 +22,4 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     );
 };
 
-export default DashboardLayout;
+export default UserLayout;

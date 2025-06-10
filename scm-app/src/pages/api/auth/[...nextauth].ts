@@ -50,7 +50,7 @@ export default NextAuth({
     },
     pages: {
         // Redirect to this custom page on signin failure or when user is not logged in
-        signIn: "/login",
+        signIn: "/auth/login",
     },
     callbacks: {
         async jwt({ token, user }) {

@@ -24,7 +24,6 @@ const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
         { name: "About", href: "/about" },
         { name: "Contact", href: "/contact" },
     ];
-    console.log("PublicNav rendered", visibleLogin);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">

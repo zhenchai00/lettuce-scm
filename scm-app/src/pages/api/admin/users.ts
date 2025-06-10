@@ -1,11 +1,11 @@
+import { requireRole } from "@/lib/auth/role-guard";
 import { NextApiRequest, NextApiResponse } from "next"
 import { getToken } from "next-auth/jwt";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-
-    if (!token) {
-        return res.status(401).json({ error: "Unauthorized" });
+    const auth = await requireRole(req, res, ["admin"]);
+    if (!auth) {
+        return; // Unauthorized or forbidden, response already sent
     }
 
     try {

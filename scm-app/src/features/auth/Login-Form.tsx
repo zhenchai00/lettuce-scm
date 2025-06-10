@@ -17,6 +17,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -27,6 +28,7 @@ interface SignInResponse {
     error?: string;
     ok?: boolean;
     status?: number;
+    url?: string;
 }
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -59,16 +61,44 @@ const LoginForm = ({
         LoginForm
     >({
         mutationFn,
-        onSuccess: (result: any) => {
+        onSuccess: async (result: any) => {
             console.log("result", result);
             if (result?.error) {
                 console.log(result.error);
+                toast.error(
+                    `Login failed: ${result.error}. Please check your credentials and try again.`
+                );
+                form.reset();
             } else if (result?.ok) {
-                router.push("/dashboard");
+                const session = await fetch("/api/auth/session").then((res) =>
+                    res.json()
+                );
+                const role = session?.user?.role;
+                switch (role) {
+                    case "admin":
+                        router.push("/admin/dashboard");
+                        break;
+                        case "farmer":
+                            router.push("/farmer/dashboard");
+                        break;
+                    case "distributor":
+                        router.push("/distributor/dashboard");
+                        break;
+                    case "retailer":
+                        router.push("/retailer/dashboard");
+                        break;
+                    default:
+                        router.push("/");
+                        break;
+                }
             }
         },
         onError: (error) => {
             console.error("Error during login:", error);
+            toast.error(
+                "Login failed. Please check your credentials and try again."
+            );
+            form.reset();
         },
     });
 
