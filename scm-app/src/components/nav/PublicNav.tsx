@@ -7,7 +7,11 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const PublicNav = () => {
+interface PublicNavProps {
+    visibleLogin?: boolean;
+}
+
+const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
     const router = useRouter();
     const [open, setOpen] = useState(false);
 
@@ -20,6 +24,7 @@ const PublicNav = () => {
         { name: "About", href: "/about" },
         { name: "Contact", href: "/contact" },
     ];
+    console.log("PublicNav rendered", visibleLogin);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
@@ -32,13 +37,11 @@ const PublicNav = () => {
                 </div>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex md:gap-8">
+                <nav className="hidden md:flex md:gap-8 md:items-center">
                     <Link
                         href="/"
                         className={
-                            isActive("/")
-                                ? "underline"
-                                : "text-gray-600"
+                            isActive("/") ? "underline" : "text-gray-600"
                         }
                     >
                         Home
@@ -46,9 +49,7 @@ const PublicNav = () => {
                     <Link
                         href="/about"
                         className={
-                            isActive("/about")
-                                ? "underline"
-                                : "text-gray-600"
+                            isActive("/about") ? "underline" : "text-gray-600"
                         }
                     >
                         About
@@ -56,13 +57,16 @@ const PublicNav = () => {
                     <Link
                         href="/contact"
                         className={
-                            isActive("/contact")
-                                ? "underline"
-                                : "text-gray-600"
+                            isActive("/contact") ? "underline" : "text-gray-600"
                         }
                     >
                         Contact
                     </Link>
+                    {visibleLogin && (
+                        <Link href="/auth/login">
+                            <Button variant="outline">Login</Button>
+                        </Link>
+                    )}
                 </nav>
 
                 {/* Mobile Menu Button */}
@@ -93,6 +97,16 @@ const PublicNav = () => {
                                         {link.name}
                                     </Link>
                                 ))}
+                                {visibleLogin && (
+                                    <Link
+                                        href="/auth/login"
+                                        onClick={() => setOpen(false)}
+                                    >
+                                        <Button variant="outline" className="w-full">
+                                            Login
+                                        </Button>
+                                    </Link>
+                                )}
                             </nav>
                         </SheetContent>
                     </Sheet>
