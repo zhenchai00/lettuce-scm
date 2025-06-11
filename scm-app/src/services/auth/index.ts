@@ -1,4 +1,33 @@
+import prisma from "@/lib/prisma";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+
 export const signIn = async (email: string, password: string) => {
-    console.log("email", email, "password", password, "role", "admin", "name", "admin123123");
-    return { email, password, role: "admin", name: "admin123123" };
+    const user = await prisma.user.findUnique({
+        where: { email },
+    })
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+        throw new Error("Invalid password");
+    }
+
+    const accessToken = jwt.sign(
+        {
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+            name: user.name,
+        },
+        process.env.JWT_SECRET!,
+        {
+            expiresIn: "1h",
+        }
+    )
+
+    return { email, password, role: user.role, name: user.name, accessToken };
 };

@@ -7,7 +7,7 @@ const RetailerDashboard = () => {
     const title = "Retailer Dashboard";
 
     return (
-        <WithRole allowedRoles={["retailer"]}>
+        <WithRole allowedRoles={["RETAILER"]}>
             <UserLayout title={title}>
                 <div>
                     <Head>

@@ -7,7 +7,7 @@ const FarmerDashboard = () => {
     const title = "Farmer Dashboard";
 
     return (
-        <WithRole allowedRoles={["farmer"]}>
+        <WithRole allowedRoles={["FARMER"]}>
             <UserLayout title={title}>
                 <div>
                     <Head>

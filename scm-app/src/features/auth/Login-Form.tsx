@@ -62,9 +62,8 @@ const LoginForm = ({
     >({
         mutationFn,
         onSuccess: async (result: any) => {
-            console.log("result", result);
             if (result?.error) {
-                console.log(result.error);
+                console.error(result.error);
                 toast.error(
                     `Login failed: ${result.error}. Please check your credentials and try again.`
                 );
@@ -75,16 +74,16 @@ const LoginForm = ({
                 );
                 const role = session?.user?.role;
                 switch (role) {
-                    case "admin":
+                    case "ADMIN":
                         router.push("/admin/dashboard");
                         break;
-                        case "farmer":
-                            router.push("/farmer/dashboard");
+                    case "FARMER":
+                        router.push("/farmer/dashboard");
                         break;
-                    case "distributor":
+                    case "DISTRIBUTOR":
                         router.push("/distributor/dashboard");
                         break;
-                    case "retailer":
+                    case "RETAILER":
                         router.push("/retailer/dashboard");
                         break;
                     default:

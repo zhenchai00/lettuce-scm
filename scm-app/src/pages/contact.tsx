@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMutation } from "@tanstack/react-query";
-import { submitContactForm } from "@/lib/react-query";
 import { toast } from "sonner";
+import { submitContactForm } from "@/features/public/query";
 
 const ContactFormSchema = z.object({
     name: z.string().min(1, "Name is required"),

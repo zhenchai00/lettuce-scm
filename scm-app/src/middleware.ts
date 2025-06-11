@@ -4,14 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 const PUBLIC_PATHS: string[] = ["/api/auth", "/api/public", "_next", "/static"];
 
 const ROLE_RULES: { [pathPrefix: string]: string[] } = {
-    "/api/admin": ["admin"],
-    "/api/farmer": ["admin", "farmer"],
-    "/api/distributor": ["admin", "distributor"],
-    "/api/retailer": ["admin", "retailer"],
-    "/admin": ["admin"],
-    "/farmer": ["admin", "farmer"],
-    "/distributor": ["admin", "distributor"],
-    "/retailer": ["admin", "retailer"],
+    "/api/admin": ["ADMIN"],
+    "/api/farmer": ["ADMIN", "FARMER"],
+    "/api/distributor": ["ADMIN", "DISTRIBUTOR"],
+    "/api/retailer": ["ADMIN", "RETAILER"],
+    "/admin": ["ADMIN"],
+    "/farmer": ["ADMIN", "FARMER"],
+    "/distributor": ["ADMIN", "DISTRIBUTOR"],
+    "/retailer": ["ADMIN", "RETAILER"],
 };
 
 export const middleware = async (req: NextRequest) => {

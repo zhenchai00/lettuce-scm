@@ -7,7 +7,7 @@ const AdminDashboard = () => {
     const title = "Admin Dashboard";
 
     return (
-        <WithRole allowedRoles={["admin"]}>
+        <WithRole allowedRoles={["ADMIN"]}>
             <UserLayout title={title}>
                 <div>
                     <Head>

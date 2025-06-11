@@ -2,12 +2,6 @@ import NextAuth from "next-auth";
 import CredentialProvider from "next-auth/providers/credentials";
 import { signIn as backendSignIn } from "@/services/auth/";
 
-interface User {
-    id: string;
-    name: string;
-    role: string;
-}
-
 declare module "next-auth" {
     interface Session {
         user: {
@@ -15,6 +9,11 @@ declare module "next-auth" {
             name: string;
             role: string;
         };
+        accessToken?: string;
+    }
+    interface JWT {
+        accessToken?: string;
+        role?: string;
     }
 }
 
@@ -24,25 +23,29 @@ export default NextAuth({
             name: "Credentials",
             credentials: {
                 email: { label: "Email", type: "text" },
-                password: { label: "Password", type: "password" }
+                password: { label: "Password", type: "password" },
             },
-            async authorize(credentials: Record<string, string> | undefined): Promise<User | null> {
+            async authorize(credentials) {
                 if (!credentials) {
                     return null;
                 }
                 try {
-                    const user = await backendSignIn(credentials.email, credentials.password);
+                    const user = await backendSignIn(
+                        credentials!.email,
+                        credentials!.password
+                    );
                     return {
                         id: user.email,
                         name: user.name,
-                        role: user.role
+                        role: user.role,
+                        accessToken: user.accessToken,
                     };
                 } catch (error: unknown) {
                     console.error("Error during authorization:", error);
                     throw new Error(`Error during authorization ${error}`);
                 }
-            }
-        })
+            },
+        }),
     ],
     session: {
         // Use JWT-based sessions for a stateless implementation
@@ -53,26 +56,26 @@ export default NextAuth({
         signIn: "/auth/login",
     },
     callbacks: {
+        // 1) On sign-in, `user` is defined. Copy accessToken/role into the NextAuth JWT.
         async jwt({ token, user }) {
-        // If user is available (just after the initial sign in), add the user info to the token
-        if (user) {
-            token.id = user.id;
-            token.name = user.name;
-            if ("role" in user) {
-                token.role = user.role;
+            if (user && "accessToken" in user) {
+                token.accessToken = user.accessToken;
+                token.role = (user as any).role;
             }
-        }
-        return token;
+            return token;
         },
+        // 2) Each time `useSession()` or getSession() is called, copy token fields into `session`
         async session({ session, token }) {
-        if (token) {
+            session.accessToken =
+                typeof token.accessToken === "string"
+                    ? token.accessToken
+                    : undefined;
             session.user = {
-                id: token.id as string,
-                name: token.name as string,
+                id: token.sub!,
+                name: token.name!,
                 role: token.role as string,
             };
-        }
-        return session;
+            return session;
         },
     },
 });
