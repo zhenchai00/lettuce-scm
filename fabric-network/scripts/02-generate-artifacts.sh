@@ -16,9 +16,9 @@ PROFILES=(
 
 # map each channel to its participating orgs (must match names in configtx.yaml)
 declare -A CHANNEL_ORGS
-CHANNEL_ORGS["farmer-distributor"]="Farmer Distributor"
-CHANNEL_ORGS["distributor-retailer"]="Distributor Retailer"
-CHANNEL_ORGS["retailer-consumer"]="Retailer"
+CHANNEL_ORGS["farmer-distributor"]="Admin Farmer Distributor"
+CHANNEL_ORGS["distributor-retailer"]="Admin Distributor Retailer"
+CHANNEL_ORGS["retailer-consumer"]="Admin Retailer"
 
 export FABRIC_CFG_PATH=$ROOT
 
@@ -61,6 +61,7 @@ for i in "${!CHANNELS[@]}"; do
   for ORG in "${ORGS[@]}"; do
     ANCHOR_TX="$ARTIFACTS/${ORG,,}anchors-$CHANNEL_NAME.tx"
     
+    echo ""
     echo "=> Generating anchor peer update for ${ORG}Org on channel $CHANNEL_NAME"
     configtxgen \
       -profile "$PROFILE" \

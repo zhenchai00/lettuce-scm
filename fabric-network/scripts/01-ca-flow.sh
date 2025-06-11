@@ -139,7 +139,7 @@ fabric-ca-client enroll -u http://peer0admin:peer0adminpw@localhost:8054 \
 echo "--- Registering and Enrolling Peer0 (peer0.farmer.example.com) for FarmerOrg ---"
 export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/Admin@farmer.${ORG_DOMAIN}
 fabric-ca-client register --caname ca-farmer --id.name peer0farmer --id.secret peer0farmerpw --id.type peer \
-  --id.affiliation farmer.org1 \
+  --id.affiliation org1 \
   --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem
 
 export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/peers/peer0.farmer.${ORG_DOMAIN}
@@ -154,7 +154,7 @@ fabric-ca-client enroll -u http://peer0farmer:peer0farmerpw@localhost:9054 \
 echo "--- Registering and Enrolling Peer0 (peer0.distributor.example.com) for DistributorOrg ---"
 export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/Admin@distributor.${ORG_DOMAIN}
 fabric-ca-client register --caname ca-distributor --id.name peer0distributor --id.secret peer0distributorpw --id.type peer \
-  --id.affiliation distributor.org1 \
+  --id.affiliation org1 \
   --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem
 
 export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/peers/peer0.distributor.${ORG_DOMAIN}
@@ -169,7 +169,7 @@ fabric-ca-client enroll -u http://peer0distributor:peer0distributorpw@localhost:
 echo "--- Registering and Enrolling Peer0 (peer0.retailer.example.com) for RetailerOrg ---"
 export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/Admin@retailer.${ORG_DOMAIN}
 fabric-ca-client register --caname ca-retailer --id.name peer0retailer --id.secret peer0retailerpw --id.type peer \
-  --id.affiliation retailer.org1 \
+  --id.affiliation org1 \
   --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem
 
 export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/peers/peer0.retailer.${ORG_DOMAIN}
@@ -257,3 +257,39 @@ done
 
 echo "--- All CA Admins, Orderer, and Peer identities registered and enrolled successfully! ---"
 echo "You can now inspect the generated crypto material in 'fabric-network/crypto-config'."
+
+echo
+echo "=== Listing all identities in the CA databases ==="
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/users/Admin@${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-orderer \
+  -u http://localhost:7054 \
+  --tls.certfiles ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/Admin@admin.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-admin \
+  -u http://localhost:8054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/admin.example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/Admin@farmer.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-farmer \
+  -u http://localhost:9054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/farmer.example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/Admin@distributor.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-distributor \
+  -u http://localhost:10054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/distributor.example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/Admin@retailer.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-retailer \
+  -u http://localhost:11054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/retailer.example.com/ca/ca-cert.pem

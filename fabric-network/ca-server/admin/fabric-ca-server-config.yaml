@@ -12,7 +12,9 @@ ca:
 crl:
   expiry: 24h
 affiliations:
-  org1: []
+  org1:
+    - admin
+    - peer
 registry:
   maxenrollments: -1
   identities:

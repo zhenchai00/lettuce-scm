@@ -12,15 +12,17 @@ ca:
 crl:
   expiry: 24h
 affiliations:
-  orderer:
-    - org1
+  org1:
+    - orderer
+    - admin
+    - peer
 registry:
   maxenrollments: -1 # Unlimited enrollments
   identities:
     - name: admin # Default admin identity for this CA
       pass: adminpw
       type: client
-      affiliation: orderer.org1 # Root affiliation
+      affiliation: org1 # Root affiliation
       attrs:
         hf.Registrar.Roles: "*"
         hf.Registrar.DelegateRoles: "*"

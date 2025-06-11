@@ -32,7 +32,7 @@ Organizations:
         Rule: "OR('AdminMSP.admin')"
     AnchorPeers:
       - Host: peer0.admin.example.com
-        Port: 7051
+        Port: 8051
 
   - &FarmerOrg
     Name: FarmerOrg
@@ -50,7 +50,7 @@ Organizations:
         Rule: "OR('FarmerMSP.admin')"
     AnchorPeers:
       - Host: peer0.farmer.example.com
-        Port: 8051
+        Port: 9051
 
   - &DistributorOrg
     Name: DistributorOrg
@@ -68,7 +68,7 @@ Organizations:
         Rule: "OR('DistributorMSP.admin')"
     AnchorPeers:
       - Host: peer0.distributor.example.com
-        Port: 9051
+        Port: 10051
 
   - &RetailerOrg
     Name: RetailerOrg
@@ -86,7 +86,7 @@ Organizations:
         Rule: "OR('RetailerMSP.admin')"
     AnchorPeers:
       - Host: peer0.retailer.example.com
-        Port: 10051
+        Port: 11051
 
 Capabilities:
   Channel: &ChannelCapabilities
@@ -125,9 +125,8 @@ Profiles:
   OrdererGenesis:
     Orderer:
       <<: *OrdererDefaults
-    Capabilities:
-      Orderer: true
-      Channel: true
+      Capabilities:
+        <<: *OrdererCapabilities
     Consortiums:
       LettuceConsortium:
         Organizations:
