@@ -1,88 +1,31 @@
-import { CreateUserData, UpdateUserData, UserData, UserRow } from "./type";
+import { CreateUserData, UpdateUserData, UserRow } from "./type";
+import { apiClient } from "@/lib/axios/api-client";
 
 export const getUsers = async (): Promise<UserRow[]> => {
-    const response = await fetch(`/api/admin/users`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch users");
-    }
-
-    return response.json();
+    const response = await apiClient.get<UserRow[]>("/api/admin/users");
+    return response.data;
 };
 
 // Get user by ID
 export const getUserById = async (id: string) => {
-    const response = await fetch(`/api/admin/users/?id=${id}`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch user");
-    }
-    return response.json();
+    const response = await apiClient.get(`/api/admin/users/?id=${id}`);
+    return response.data;
 };
 
 // Create a new user
 export const createUser = async (data: CreateUserData) => {
-    const response = await fetch(`/api/admin/users`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create user");
-    }
-    return response.json();
+    const response = await apiClient.post("/api/admin/users", data);
+    return response.data;
 };
 
 // Update an existing user
 export const updateUser = async ({ id, data }: UpdateUserData) => {
-    const response = await fetch(`/api/admin/users/?id=${id}`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update user");
-    }
-    return response.json();
+    const response = await apiClient.put(`/api/admin/users/?id=${id}`, data);
+    return response.data;
 };
 
 // Delete a user
 export const deleteUser = async (id: string) => {
-    const response = await fetch(`/api/admin/users/?id=${id}`, {
-        method: "DELETE",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete user");
-    }
-    return response.json();
+    const response = await apiClient.delete(`/api/admin/users/?id=${id}`);
+    return response.data;
 };

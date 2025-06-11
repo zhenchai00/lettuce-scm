@@ -24,10 +24,17 @@ export const getUserById = async (id: string) => {
         throw new Error(`User with ID ${id} not found`);
     }
     return user;
-}
+};
 export const createUser = async (data: CreateUserData) => {
-    let password = await bcrypt.hash(data.password, 10);
+    const existingUser = await prisma.user.findUnique({
+        where: { email: data.email },
+    });
 
+    if (existingUser) {
+        throw new Error(`User with email ${data.email} already exists`);
+    }
+
+    let password = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
         data: {
             name: data.name,
@@ -38,9 +45,16 @@ export const createUser = async (data: CreateUserData) => {
     });
     console.log("Created user:", user);
     return user;
-}
+};
 
 export const updateUser = async (id: string, data: UserData) => {
+    const existingUser = await prisma.user.findUnique({
+        where: { id },
+    });
+    if (!existingUser) {
+        throw new Error(`User with ID ${id} not found`);
+    }
+
     const user = await prisma.user.update({
         where: { id },
         data: {
@@ -54,9 +68,15 @@ export const updateUser = async (id: string, data: UserData) => {
 };
 
 export const deleteUser = async (id: string) => {
+    const existingUser = await prisma.user.findUnique({
+        where: { id },
+    });
+    if (!existingUser) {
+        throw new Error(`User with ID ${id} not found`);
+    }
     const user = await prisma.user.delete({
         where: { id },
     });
     console.log("Deleted user:", user);
     return user;
-}
+};

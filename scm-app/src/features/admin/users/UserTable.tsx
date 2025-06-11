@@ -13,7 +13,8 @@ import { useMutation } from "@tanstack/react-query";
 import { deleteUser } from "./query";
 import EditUserForm from "./EditUserForm";
 import { queryClient } from "@/lib/react-query";
-import { PenSquareIcon, Trash2 } from "lucide-react";
+import { PenSquareIcon } from "lucide-react";
+import DeleteButton from "@/components/common/DeleteButton";
 
 interface UserTableProps {
     data: UserRow[];
@@ -65,15 +66,10 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                                 >
                                     <PenSquareIcon className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                    size="icon"
-                                    variant="destructive"
-                                    onClick={() =>
-                                        deleteMutation.mutate(user.id)
-                                    }
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <DeleteButton
+                                    deleteUser={() => deleteMutation.mutate(user.id)}
+                                    isPending={deleteMutation.status === "pending"}
+                                />
                             </TableCell>
                         </TableRow>
                     ))}
