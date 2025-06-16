@@ -29,5 +29,5 @@ export const signIn = async (email: string, password: string) => {
         }
     )
 
-    return { email, password, role: user.role, name: user.name, accessToken };
+    return { id: user.id, email, password, role: user.role, name: user.name, accessToken };
 };

@@ -28,12 +28,9 @@ const UsersPage = () => {
     return (
         <WithRole allowedRoles={["ADMIN"]}>
             <UserLayout title="User Management">
-                <Head>
-                    <title>Users Management</title>
-                </Head>
                 <main className="p-4">
                     <div className="flex items-center justify-between mb-4">
-                        <h1 className="text-2xl font-bold mb-4">User Management</h1>
+                        <h1 className="text-2xl font-bold mb-4">List of Users</h1>
                         <Button onClick={() => setOpenCreateUserDialog(true)}>Add User</Button>
                     </div>
 

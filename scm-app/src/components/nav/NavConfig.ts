@@ -13,7 +13,7 @@ export const NAVI_CONFIG: Record<
 
     FARMER: [
         { href: "/farmer/dashboard", label: "Dashboard", icon: Home },
-        { href: "/farmer/batches", label: "My Batches", icon: Package },
+        { href: "/farmer/product-batch", label: "My Batches", icon: Package },
         { href: "/farmer/settings", label: "Settings", icon: Settings },
     ],
     DISTRIBUTOR: [

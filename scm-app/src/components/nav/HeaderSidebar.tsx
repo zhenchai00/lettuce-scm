@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, UserCircle2 } from "lucide-react";
+import { Loader, LogOut, UserCircle2 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-import { FC } from "react";
+import { FC, useEffect } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import Head from "next/head";
 
 interface SidebarHeaderProps {
     title?: string;
@@ -11,17 +12,33 @@ interface SidebarHeaderProps {
 
 const SidebarHeader: FC<SidebarHeaderProps> = ({ title }) => {
     const { data: session } = useSession();
+
+    useEffect(() => {
+        console.log("Session changed:", session?.user);
+    }, [session]);
     return (
         <header className="flex justify-between p-4 border-b">
             <div className="flex items-center space-x-4">
                 <SidebarTrigger />
-                <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-                <h1 className="text-xl font-semibold">{title}</h1>
+                <Separator
+                    orientation="vertical"
+                    className="mx-2 data-[orientation=vertical]:h-4"
+                />
+                <Head>
+                    <title>{title}</title>
+                </Head>
+                <h1 className="text-lg font-semibold">{title}</h1>
             </div>
             <div className="flex items-center space-x-4">
                 <Button variant="ghost" className="flex items-center space-x-2">
                     <UserCircle2 className="w-5 h-5" />
-                    <span>{session?.user.name}</span>
+                    <span>
+                        {session ? (
+                            session?.user.name
+                        ) : (
+                            <Loader className="animate-spin w-5 h-5" />
+                        )}
+                    </span>
                 </Button>
                 <Button
                     variant="ghost"

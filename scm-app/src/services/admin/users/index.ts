@@ -25,6 +25,30 @@ export const getUserById = async (id: string) => {
     }
     return user;
 };
+
+export const getUserByEmail = async (email: string) => {
+    if (!email) {
+        throw new Error("Email is required to fetch user");
+    }
+    console.log("Fetching user with email:", email);
+    const user = await prisma.user.findUnique({
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+        where: { email },
+    });
+    console.log("Fetched user:", user);
+    if (!user) {
+        throw new Error(`User with email ${email} not found`);
+    }
+    return user;
+};
+
 export const createUser = async (data: CreateUserData) => {
     const existingUser = await prisma.user.findUnique({
         where: { email: data.email },

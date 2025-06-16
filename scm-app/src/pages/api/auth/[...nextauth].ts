@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialProvider from "next-auth/providers/credentials";
 import { signIn as backendSignIn } from "@/services/auth/";
+import { getUserById } from "@/services/admin/users";
 
 declare module "next-auth" {
     interface Session {
@@ -35,7 +36,8 @@ export default NextAuth({
                         credentials!.password
                     );
                     return {
-                        id: user.email,
+                        id: user.id,
+                        email: user.email,
                         name: user.name,
                         role: user.role,
                         accessToken: user.accessToken,
@@ -66,13 +68,14 @@ export default NextAuth({
         },
         // 2) Each time `useSession()` or getSession() is called, copy token fields into `session`
         async session({ session, token }) {
+            const dbUser = await getUserById(token.sub!);
             session.accessToken =
                 typeof token.accessToken === "string"
                     ? token.accessToken
                     : undefined;
             session.user = {
                 id: token.sub!,
-                name: token.name!,
+                name: dbUser?.name || "",
                 role: token.role as string,
             };
             return session;
