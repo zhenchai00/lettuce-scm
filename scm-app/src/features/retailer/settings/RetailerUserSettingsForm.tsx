@@ -36,7 +36,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const UserSettingsForm = () => {
+const RetailerUserSettingsForm = () => {
     const { data, update: updateSession } = useSession();
     const router = useRouter();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -179,4 +179,4 @@ const UserSettingsForm = () => {
         </div>
     );
 };
-export default UserSettingsForm;
+export default RetailerUserSettingsForm;

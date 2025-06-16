@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialProvider from "next-auth/providers/credentials";
 import { signIn as backendSignIn } from "@/services/auth/";
-import { getUserById } from "@/services/admin/users";
+import { getUserById } from "@/services/users";
 
 declare module "next-auth" {
     interface Session {

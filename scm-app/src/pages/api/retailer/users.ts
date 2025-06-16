@@ -3,7 +3,7 @@ import { createUser, deleteUser, getUserByEmail, getUserById, getUsers, updateUs
 import { NextApiRequest, NextApiResponse } from "next";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-    const auth = await requireRole(req, res, ["ADMIN"]);
+    const auth = await requireRole(req, res, ["ADMIN", "RETAILER"]);
     if (!auth) {
         return; // Unauthorized or forbidden, response already sent
     }
@@ -24,23 +24,23 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                 const users = await getUsers();
                 return res.status(200).json(users);
                 break;
-            case "POST":
-                const newUser = await createUser(req.body);
-                return res.status(201).json(newUser);
-                break;
+            // case "POST":
+            //     const newUser = await createUser(req.body);
+            //     return res.status(201).json(newUser);
+            //     break;
             case "PUT":
                 const { id: putId } = req.query;
                 const updatedUser = await updateUser(putId as string, req.body);
                 return res.status(200).json(updatedUser);
                 break;
-            case "DELETE":
-                const { id: deleteId } = req.query;
-                const deletedUser = await deleteUser(deleteId as string);
-                return res.status(200).json(deletedUser);
-                break;
+            // case "DELETE":
+            //     const { id: deleteId } = req.query;
+            //     const deletedUser = await deleteUser(deleteId as string);
+            //     return res.status(200).json(deletedUser);
+            //     break;
 
             default:
-                res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
+                res.setHeader("Allow", ["GET", "PUT"]);
                 res.status(405).end(`Method ${req.method} Not Allowed`);
                 break;
         }
