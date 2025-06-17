@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { Home, Package, Settings, User } from "lucide-react";
+import { Home, Package, PackageSearch, Settings, User } from "lucide-react";
 
 export const NAVI_CONFIG: Record<
     string,
@@ -7,6 +7,7 @@ export const NAVI_CONFIG: Record<
 > = {
     ADMIN: [
         { href: "/admin/dashboard", label: "Dashboard", icon: Home },
+        { href: "/farmer/product-batch", label: "Product Batches", icon: Package },
         { href: "/admin/users", label: "Users", icon: User },
         { href: "/admin/settings", label: "Settings", icon: Settings },
     ],
@@ -14,6 +15,7 @@ export const NAVI_CONFIG: Record<
     FARMER: [
         { href: "/farmer/dashboard", label: "Dashboard", icon: Home },
         { href: "/farmer/product-batch", label: "My Batches", icon: Package },
+        { href: "/farmer/inventory", label: "Inventory", icon: PackageSearch },
         { href: "/farmer/settings", label: "Settings", icon: Settings },
     ],
     DISTRIBUTOR: [
