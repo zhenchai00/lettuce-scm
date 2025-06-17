@@ -1,216 +1,399 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
 set -euo pipefail
 
+# Define the root directory of the fabric-network project
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CA_HOST=localhost
-ADMIN_USER=admin
-ADMIN_PW=adminpw
 
-export FABRIC_CA_CLIENT_HOME=$ROOT/fabric-ca-client      # isolate client state
+# Define environment variables for consistency
+export PATH=${ROOT}/bin:${PATH}
+export FABRIC_CFG_PATH=${ROOT}/config
 
-# 1) Bootstrap-admin enrollment into the same MSP folders peers/orderers will live in
-enroll_ca_admin() {
-  ORG_KEY=$1      # e.g. "orderer" or "farmer"
-  CANAME=$2       # e.g. "ca-orderer"
-  PORT=$3         # 7054, 9054, …
-  MSP_PATH=$4     # e.g. "$ROOT/crypto-config/ordererOrganizations/example.com/msp"
+# Define common organization domain
+export ORG_DOMAIN="example.com"
 
-  echo "⏳ Enrolling CA admin for ${ORG_KEY}…"
-  fabric-ca-client enroll \
-    -u http://${ADMIN_USER}:${ADMIN_PW}@${CA_HOST}:${PORT} \
-    --caname ${CANAME} \
-    --mspdir ${MSP_PATH} \
-    --tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem
+# --- Copy CA certificates to crypto-config structure ---
+# This must happen BEFORE enrolling any identities, as --tls.certfiles points to these.
+echo "--- Copying CA certificates to crypto-config structure ---"
+# Create base directories for CA certs in crypto-config
+mkdir -p ${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/ca
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/ca
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/ca
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/ca
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/ca
 
-  # copy NodeOUs config & ca root into that MSP
-  cp ${ROOT}/config/ca-config.yaml ${MSP_PATH}/config.yaml
-  mkdir -p ${MSP_PATH}/{cacerts,tlscacerts}
-  cp ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem ${MSP_PATH}/cacerts/
-  cp ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem ${MSP_PATH}/tlscacerts/
+# Copy CA certs from the CA's mounted volume to the crypto-config structure
+cp ${ROOT}/ca-server/orderer/ca-cert.pem ${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/ca/
+cp ${ROOT}/ca-server/admin/ca-cert.pem ${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/ca/
+cp ${ROOT}/ca-server/farmer/ca-cert.pem ${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/ca/
+cp ${ROOT}/ca-server/distributor/ca-cert.pem ${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/ca/
+cp ${ROOT}/ca-server/retailer/ca-cert.pem ${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/ca/
 
-  echo "✔ CA admin MSP at ${MSP_PATH}"
-}
 
-# 2) Register identities, pointing at the exact same MSP_PATH
-register_identity() {
-  ORG_KEY=$1
-  CANAME=$2
-  PORT=$3
-  ID_NAME=$4
-  ID_SECRET=$5
-  ID_TYPE=$6
-  AFFIL=$7
-  MSP_PATH=$8
+# --- Define CA URLs and Admin Paths (AFTER copying CA certs) ---
+# Orderer CA
+export ORDERER_CA_HOME=${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/ca
+export ORDERER_CA_URL="http://admin:adminpw@localhost:7054" # Bootstrap admin for CA
 
-  echo "⏳ Register ${ID_NAME}…"
-  fabric-ca-client register \
-    --url http://${ADMIN_USER}:${ADMIN_PW}@${CA_HOST}:${PORT} \
-    --caname ${CANAME} \
-    --id.name ${ID_NAME} \
-    --id.secret ${ID_SECRET} \
-    --id.type ${ID_TYPE} \
-    --id.affiliation ${AFFIL} \
-    --mspdir ${MSP_PATH} \
-    --tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem
+# Admin Org CA
+export ADMIN_CA_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/ca
+export ADMIN_CA_URL="http://admin:adminpw@localhost:8054"
 
-  echo "✔ Registered ${ID_NAME}"
-}
+# Farmer Org CA
+export FARMER_CA_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/ca
+export FARMER_CA_URL="http://admin:adminpw@localhost:9054"
 
-# 3) Enroll each registered identity into its own MSP folder
-enroll_identity() {
-  ORG_KEY=$1
-  CANAME=$2
-  PORT=$3
-  ID_NAME=$4
-  ID_SECRET=$5
-  MSP_PATH=$6
+# Distributor Org CA
+export DISTRIBUTOR_CA_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/ca
+export DISTRIBUTOR_CA_URL="http://admin:adminpw@localhost:10054"
 
-  echo "⏳ Enrolling ${ID_NAME}…"
-  fabric-ca-client enroll \
-    -u http://${ID_NAME}:${ID_SECRET}@${CA_HOST}:${PORT} \
-    --caname ${CANAME} \
-    --csr.cn ${ID_NAME} \
-    --mspdir ${MSP_PATH} \
-    --tls.certfiles ${ROOT}/ca-server/${ORG_KEY}/ca-cert.pem
+# Retailer Org CA
+export RETAILER_CA_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/ca
+export RETAILER_CA_URL="http://admin:adminpw@localhost:11054"
 
-  echo "✔ MSP ready for ${ID_NAME} at ${MSP_PATH}"
-}
+# --- Enroll CA Admins ---
 
-# ──── MAIN ────
+echo
+echo "--- Enrolling CA Bootstrap Admin - OrdererOrg ---"
+# Set FABRIC_CA_CLIENT_HOME for the enrollment command to store the admin's MSP
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/users/Admin@${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp # Ensure this path exists before enroll
+fabric-ca-client enroll -u $ORDERER_CA_URL \
+  --caname ca-orderer \
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${ORDERER_CA_HOME}/ca-cert.pem \
+  --csr.cn="Admin@${ORG_DOMAIN}"
 
-# A) Create org‐level MSP folders for each org
-mkdir -p \
-  ${ROOT}/crypto-config/ordererOrganizations/example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
-
-# B) Create peer node MSP folders with admincerts/signcerts/etc.
-mkdir -p $ROOT/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-mkdir -p $ROOT/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp/{admincerts,signcerts,keystore,cacerts,tlscacerts}
-
-# ── (1) Bootstrap‐admin for each org’s MSP ──
-enroll_ca_admin orderer     ca-orderer     7054    ${ROOT}/crypto-config/ordererOrganizations/example.com/msp
-enroll_ca_admin admin       ca-admin       8054    ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
-enroll_ca_admin farmer      ca-farmer      9054    ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
-enroll_ca_admin distributor ca-distributor 10054   ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
-enroll_ca_admin retailer    ca-retailer    11054   ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
-
-# ── (2) Register identities ──
-register_identity orderer       ca-orderer      7054  orderer           ordererpw           orderer         orderer.org1   ${ROOT}/crypto-config/ordererOrganizations/example.com/msp
-register_identity orderer       ca-orderer      7054  ordererAdmin      ordererAdminpw      admin           orderer.org1   ${ROOT}/crypto-config/ordererOrganizations/example.com/msp
-
-# ── AdminOrg registrations ──
-register_identity admin         ca-admin        8054  peer0             peer0pw             peer            admin.org1     ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
-register_identity admin         ca-admin        8054  adminUser         adminUserpw         admin           admin.org1     ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp
-
-# ── FarmerOrg registrations ──
-register_identity farmer        ca-farmer       9054  peer0             peer0pw             peer            farmer.org1     ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
-register_identity farmer        ca-farmer       9054  farmerAdmin       farmerAdminpw       admin           farmer.org1     ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp
-
-# ── DistributorOrg registrations ──
-register_identity distributor   ca-distributor  10054  peer0            peer0pw             peer            distributor.org1     ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
-register_identity distributor   ca-distributor  10054  distributorAdmin distributorAdminpw  admin           distributor.org1     ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp
-
-# ── RetailerOrg registrations ──
-register_identity retailer      ca-retailer     11054  peer0            peer0pw             peer            retailer.org1     ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
-register_identity retailer      ca-retailer     11054  retailerAdmin    retailerAdminpw     admin           retailer.org1     ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp
-
-# ── (3) Enroll each identity ──
-# (3.A) Enroll orderer and ordererAdmin into their node MSP 
-enroll_identity  orderer        ca-orderer      7054    orderer             ordererpw           ${ROOT}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
-enroll_identity  orderer        ca-orderer      7054    ordererAdmin        ordererAdminpw      ${ROOT}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp
-cp \
-  ${ROOT}/crypto-config/ordererOrganizations/example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp/admincerts/
-
-# (3.B) Enroll peer0.admin and adminUser; copy Admin user into AdminOrg’s admincerts
-enroll_identity  admin          ca-admin        8054    peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp
-enroll_identity  admin          ca-admin        8054    adminUser           adminUserpw         ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp
-
-# ─── ENROLL THE ORG ADMIN USER into users/Admin@admin.example.com/msp ───
-mkdir -p ${ROOT}/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp
-fabric-ca-client enroll \
-  -u http://adminUser:adminUserpw@${CA_HOST}:8054 \
+echo
+echo "--- Enrolling CA Bootstrap Admin - AdminOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/Admin@admin.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $ADMIN_CA_URL \
   --caname ca-admin \
-  --csr.cn Admin@admin.example.com \
-  --mspdir ${ROOT}/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp \
-  --tls.certfiles ${ROOT}/ca-server/admin/ca-cert.pem
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${ADMIN_CA_HOME}/ca-cert.pem \
+  --csr.cn="Admin@admin.${ORG_DOMAIN}"
 
-# ─── COPY Org Admin’s signcert INTO the org‐level MSP’s admincerts ───
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/msp/admincerts/
+echo 
+echo "--- Enrolling CA Admin for OrgAdminOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/OrgAdmin@admin.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $ADMIN_CA_URL \
+  --caname ca-admin \
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${ADMIN_CA_HOME}/ca-cert.pem \
+  --csr.cn="OrgAdmin@admin.${ORG_DOMAIN}"
 
-# Also copy peer0.admin’s signed cert into its MSP’s admincerts (so the peer can act as admin if needed)
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp/admincerts/
-
-# (3.C) Enroll peer0.farmer and farmerAdmin; copy Org Admin into FarmerOrg’s admincerts
-enroll_identity  farmer         ca-farmer       9054    peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp
-enroll_identity  farmer         ca-farmer       9054    farmerAdmin         farmerAdminpw       ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp
-
-mkdir -p ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp
-fabric-ca-client enroll \
-  -u http://farmerAdmin:farmerAdminpw@${CA_HOST}:9054 \
+echo
+echo "--- Enrolling CA Admin for FarmerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/Admin@farmer.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $FARMER_CA_URL \
   --caname ca-farmer \
-  --csr.cn Admin@farmer.example.com \
-  --mspdir ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp \
-  --tls.certfiles ${ROOT}/ca-server/farmer/ca-cert.pem
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem \
+  --csr.cn="Admin@farmer.${ORG_DOMAIN}"
 
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/msp/admincerts/
+echo
+echo "--- Enrolling CA Admin for OrgFarmerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/OrgAdmin@farmer.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $FARMER_CA_URL \
+  --caname ca-farmer \
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem \
+  --csr.cn="OrgAdmin@farmer.${ORG_DOMAIN}"
 
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp/admincerts/
-
-
-# (3.D) Enroll peer0.distributor and distributorAdmin; copy Org Admin into DistributorOrg’s admincerts
-enroll_identity  distributor    ca-distributor  10054   peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp
-enroll_identity  distributor    ca-distributor  10054   distributorAdmin    distributorAdminpw  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp
-
-mkdir -p ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp
-fabric-ca-client enroll \
-  -u http://distributorAdmin:distributorAdminpw@${CA_HOST}:10054 \
+echo
+echo "--- Enrolling CA Admin for DistributorOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/Admin@distributor.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $DISTRIBUTOR_CA_URL \
   --caname ca-distributor \
-  --csr.cn Admin@distributor.example.com \
-  --mspdir ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp \
-  --tls.certfiles ${ROOT}/ca-server/distributor/ca-cert.pem
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem \
+  --csr.cn="Admin@distributor.${ORG_DOMAIN}"
 
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/msp/admincerts/
+echo
+echo "--- Enrolling CA Admin for OrgDistributorOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/OrgAdmin@distributor.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $DISTRIBUTOR_CA_URL \
+  --caname ca-distributor \
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem \
+  --csr.cn="OrgAdmin@distributor.${ORG_DOMAIN}"
 
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp/admincerts/
-
-
-# (3.E) Enroll peer0.retailer and retailerAdmin; copy Org Admin into RetailerOrg’s admincerts
-enroll_identity  retailer       ca-retailer     11054   peer0               peer0pw             ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp
-enroll_identity  retailer       ca-retailer     11054   retailerAdmin       retailerAdminpw     ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp
-
-mkdir -p ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp
-fabric-ca-client enroll \
-  -u http://retailerAdmin:retailerAdminpw@${CA_HOST}:11054 \
+echo
+echo "--- Enrolling CA Admin for RetailerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/Admin@retailer.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $RETAILER_CA_URL \
   --caname ca-retailer \
-  --csr.cn Admin@retailer.example.com \
-  --mspdir ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp \
-  --tls.certfiles ${ROOT}/ca-server/retailer/ca-cert.pem
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem \
+  --csr.cn="Admin@retailer.${ORG_DOMAIN}"
 
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/msp/admincerts/
+echo
+echo "--- Enrolling CA Admin for OrgRetailerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/OrgAdmin@retailer.${ORG_DOMAIN}
+mkdir -p ${FABRIC_CA_CLIENT_HOME}/msp
+fabric-ca-client enroll -u $RETAILER_CA_URL \
+  --caname ca-retailer \
+  -M ${FABRIC_CA_CLIENT_HOME}/msp \
+  --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem \
+  --csr.cn="OrgAdmin@retailer.${ORG_DOMAIN}"
 
-cp \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp/signcerts/* \
-  ${ROOT}/crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp/admincerts/
 
-echo "🎉 All bootstrap-admin, register, and enroll steps complete!"
+# --- Register and Enroll Orderer Identity ---
+echo "--- Registering and Enrolling Orderer (orderer.example.com) ---"
+# Set FABRIC_CA_CLIENT_HOME to the *organization's CA admin* that will perform the registration
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/users/Admin@${ORG_DOMAIN}
+fabric-ca-client register --caname ca-orderer --id.name orderer --id.secret ordererpw --id.type orderer \
+  --tls.certfiles ${ORDERER_CA_HOME}/ca-cert.pem # This points to the CA's root cert for verification
+
+mkdir -p ${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/orderers/orderer.${ORG_DOMAIN}/msp
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/orderers/orderer.${ORG_DOMAIN} # This path will be where the orderer's client-side files are stored
+fabric-ca-client enroll -u http://orderer:ordererpw@localhost:7054 \
+  --caname ca-orderer \
+  -M ${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/orderers/orderer.${ORG_DOMAIN}/msp \
+  --csr.hosts "orderer.${ORG_DOMAIN}" \
+  --tls.certfiles ${ORDERER_CA_HOME}/ca-cert.pem
+
+# --- Register and Enroll Peer0 for AdminOrg ---
+echo "--- Registering and Enrolling Peer0 (peer0.admin.example.com) for AdminOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/Admin@admin.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-admin --id.name peer0admin --id.secret peer0adminpw --id.type client \
+  --id.affiliation org1 \
+  --id.attrs "hf.OU=peer:ecert" \
+  --tls.certfiles ${ADMIN_CA_HOME}/ca-cert.pem
+
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/peers/peer0.admin.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/peers/peer0.admin.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://peer0admin:peer0adminpw@localhost:8054 \
+  --caname ca-admin \
+  -M ${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/peers/peer0.admin.${ORG_DOMAIN}/msp \
+  --csr.hosts "peer0.admin.${ORG_DOMAIN}" \
+  --tls.certfiles ${ADMIN_CA_HOME}/ca-cert.pem
+
+echo 
+echo "--- Registering and Enrolling OrgAdmin for AdminOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/OrgAdmin@admin.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-admin --id.name OrgAdmin --id.secret OrgAdminpw --id.type client \
+  --id.affiliation org1.admin \
+  --tls.certfiles ${ADMIN_CA_HOME}/ca-cert.pem
+
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/OrgAdmin@admin.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/OrgAdmin@admin.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://OrgAdmin:OrgAdminpw@localhost:8054 \
+  --caname ca-admin \
+  -M ${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/OrgAdmin@admin.${ORG_DOMAIN}/msp \
+  --csr.cn "OrgAdmin@admin.${ORG_DOMAIN}" \
+  --tls.certfiles ${ADMIN_CA_HOME}/ca-cert.pem
+
+
+# --- Register and Enroll Peer0 for FarmerOrg ---
+echo "--- Registering and Enrolling Peer0 (peer0.farmer.example.com) for FarmerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/Admin@farmer.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-farmer --id.name peer0farmer --id.secret peer0farmerpw --id.type client \
+  --id.affiliation org1 \
+  --id.attrs "hf.OU=peer:ecert" \
+  --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem
+
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/peers/peer0.farmer.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/peers/peer0.farmer.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://peer0farmer:peer0farmerpw@localhost:9054 \
+  --caname ca-farmer \
+  -M ${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/peers/peer0.farmer.${ORG_DOMAIN}/msp \
+  --csr.hosts "peer0.farmer.${ORG_DOMAIN}" \
+  --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem
+
+echo 
+echo "--- Registering and Enrolling OrgAdmin for FarmerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/OrgAdmin@farmer.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-farmer --id.name OrgAdmin --id.secret OrgAdminpw --id.type client \
+  --id.affiliation org1.admin \
+  --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/OrgAdmin@farmer.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/OrgAdmin@farmer.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://OrgAdmin:OrgAdminpw@localhost:9054 \
+  --caname ca-farmer \
+  -M ${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/OrgAdmin@farmer.${ORG_DOMAIN}/msp \
+  --csr.cn "OrgAdmin@farmer.${ORG_DOMAIN}" \
+  --tls.certfiles ${FARMER_CA_HOME}/ca-cert.pem
+
+
+# --- Register and Enroll Peer0 for DistributorOrg ---
+echo "--- Registering and Enrolling Peer0 (peer0.distributor.example.com) for DistributorOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/Admin@distributor.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-distributor --id.name peer0distributor --id.secret peer0distributorpw --id.type client \
+  --id.affiliation org1 \
+  --id.attrs "hf.OU=peer:ecert" \
+  --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem
+
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/peers/peer0.distributor.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/peers/peer0.distributor.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://peer0distributor:peer0distributorpw@localhost:10054 \
+  --caname ca-distributor \
+  -M ${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/peers/peer0.distributor.${ORG_DOMAIN}/msp \
+  --csr.hosts "peer0.distributor.${ORG_DOMAIN}" \
+  --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem
+
+echo
+echo "--- Registering and Enrolling OrgAdmin for DistributorOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/OrgAdmin@distributor.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-distributor --id.name OrgAdmin --id.secret OrgAdminpw --id.type client \
+  --id.affiliation org1.admin \
+  --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/OrgAdmin@distributor.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/OrgAdmin@distributor.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://OrgAdmin:OrgAdminpw@localhost:10054 \
+  --caname ca-distributor \
+  -M ${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/OrgAdmin@distributor.${ORG_DOMAIN}/msp \
+  --csr.cn "OrgAdmin@distributor.${ORG_DOMAIN}" \
+  --tls.certfiles ${DISTRIBUTOR_CA_HOME}/ca-cert.pem
+
+
+# --- Register and Enroll Peer0 for RetailerOrg ---
+echo "--- Registering and Enrolling Peer0 (peer0.retailer.example.com) for RetailerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/Admin@retailer.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-retailer --id.name peer0retailer --id.secret peer0retailerpw --id.type client \
+  --id.affiliation org1 \
+  --id.attrs "hf.OU=peer:ecert" \
+  --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem
+
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/peers/peer0.retailer.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/peers/peer0.retailer.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://peer0retailer:peer0retailerpw@localhost:11054 \
+  --caname ca-retailer \
+  -M ${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/peers/peer0.retailer.${ORG_DOMAIN}/msp \
+  --csr.hosts "peer0.retailer.${ORG_DOMAIN}" \
+  --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem
+
+echo
+echo "--- Registering and Enrolling OrgAdmin for RetailerOrg ---"
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/OrgAdmin@retailer.${ORG_DOMAIN}
+fabric-ca-client register --caname ca-retailer --id.name OrgAdmin --id.secret OrgAdminpw --id.type client \
+  --id.affiliation org1.admin \
+  --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/OrgAdmin@retailer.${ORG_DOMAIN}
+mkdir -p ${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/OrgAdmin@retailer.${ORG_DOMAIN}/msp
+fabric-ca-client enroll -u http://OrgAdmin:OrgAdminpw@localhost:11054 \
+  --caname ca-retailer \
+  -M ${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/OrgAdmin@retailer.${ORG_DOMAIN}/msp \
+  --csr.cn "OrgAdmin@retailer.${ORG_DOMAIN}" \
+  --tls.certfiles ${RETAILER_CA_HOME}/ca-cert.pem
+
+
+normalizePeerMSP() {
+  local MSP_DIR=$1
+  mkdir -p "${MSP_DIR}/cacerts"
+  cp ${MSP_DIR}/cacerts/*.pem "${MSP_DIR}/cacerts/ca-cert.pem"
+}
+
+normalizePeerMSP "${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/orderers/orderer.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/peers/peer0.admin.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/peers/peer0.farmer.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/peers/peer0.distributor.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/peers/peer0.retailer.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/users/Admin@${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/Admin@admin.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/Admin@farmer.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/Admin@distributor.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/Admin@retailer.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/OrgAdmin@admin.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/OrgAdmin@farmer.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/OrgAdmin@distributor.${ORG_DOMAIN}/msp"
+normalizePeerMSP "${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/OrgAdmin@retailer.${ORG_DOMAIN}/msp"
+
+echo "=== Bootstrapping Org-Level MSP directories ==="
+bootstrapOrgMSP() {
+  local ORG_KEY=$1
+  local BASEDIR MSP_DIR CA_PEM USER_SIGNCERT
+
+  if [[ "$ORG_KEY" == "orderer" ]]; then
+    BASEDIR="${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}"
+    CA_PEM="${BASEDIR}/ca/ca-cert.pem"
+    USER_SIGNCERT="${BASEDIR}/users/Admin@${ORG_DOMAIN}/msp/signcerts/"*.pem
+  else
+    BASEDIR="${ROOT}/crypto-config/peerOrganizations/${ORG_KEY}.${ORG_DOMAIN}"
+    CA_PEM="${BASEDIR}/ca/ca-cert.pem"
+    USER_SIGNCERT="${BASEDIR}/users/Admin@${ORG_KEY}.${ORG_DOMAIN}/msp/signcerts/"*.pem
+  fi
+
+  MSP_DIR="${BASEDIR}/msp"
+  CONF_SRC=${ROOT}/config/ca-config.yaml
+  CONF_DEST="${MSP_DIR}/config.yaml"
+  echo ">>> Creating org-level MSP for ${ORG_KEY^} at ${MSP_DIR}"
+  mkdir -p "${MSP_DIR}/cacerts" "${MSP_DIR}/admincerts"
+
+  # Copy CA root cert
+  cp "${CA_PEM}" "${MSP_DIR}/cacerts/"
+
+  # Copy org-admin’s signcert into admincerts
+  cp ${USER_SIGNCERT} "${MSP_DIR}/admincerts/"
+
+  # Copy NodeOUs config so the MSP loader knows about admin/peer/orderer OUs
+  cp "${CONF_SRC}" "${CONF_DEST}"
+}
+
+bootstrapOrgMSP orderer
+bootstrapOrgMSP admin
+bootstrapOrgMSP farmer
+bootstrapOrgMSP distributor
+bootstrapOrgMSP retailer
+
+echo "=== Bootstrapping NODE-LEVEL MSP for peers and orderer ==="
+NODE_MSPS=(
+  "${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/orderers/orderer.${ORG_DOMAIN}/msp"
+  "${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/peers/peer0.admin.${ORG_DOMAIN}/msp"
+  "${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/peers/peer0.farmer.${ORG_DOMAIN}/msp"
+  "${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/peers/peer0.distributor.${ORG_DOMAIN}/msp"
+  "${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/peers/peer0.retailer.${ORG_DOMAIN}/msp"
+)
+
+for MSP_DIR in "${NODE_MSPS[@]}"; do
+  echo "→ Bootstrapping node MSP at $MSP_DIR"
+  cp "${ROOT}/config/ca-config.yaml" "$MSP_DIR/config.yaml"
+done
+
+
+echo "--- All CA Admins, Orderer, and Peer identities registered and enrolled successfully! ---"
+echo "You can now inspect the generated crypto material in 'fabric-network/crypto-config'."
+
+echo
+echo "=== Listing all identities in the CA databases ==="
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/ordererOrganizations/${ORG_DOMAIN}/users/Admin@${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-orderer \
+  -u http://localhost:7054 \
+  --tls.certfiles ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/admin.${ORG_DOMAIN}/users/Admin@admin.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-admin \
+  -u http://localhost:8054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/admin.example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/farmer.${ORG_DOMAIN}/users/Admin@farmer.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-farmer \
+  -u http://localhost:9054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/farmer.example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/distributor.${ORG_DOMAIN}/users/Admin@distributor.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-distributor \
+  -u http://localhost:10054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/distributor.example.com/ca/ca-cert.pem
+
+echo
+export FABRIC_CA_CLIENT_HOME=${ROOT}/crypto-config/peerOrganizations/retailer.${ORG_DOMAIN}/users/Admin@retailer.${ORG_DOMAIN}
+fabric-ca-client identity list \
+  --caname ca-retailer \
+  -u http://localhost:11054 \
+  --tls.certfiles ./crypto-config/peerOrganizations/retailer.example.com/ca/ca-cert.pem

@@ -10,6 +10,15 @@ ca:
   name: ca-distributor
   keyfile:
   certfile:
+csr:
+  cn: ca-distributor
+  names:
+    - C: US
+      ST: California
+      L: San Francisco
+      O: Hyperledger Fabric
+  host:
+    - localhost
 crl:
   expiry: 24h
 affiliations:

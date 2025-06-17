@@ -9,6 +9,15 @@ ca:
   name: ca-admin # Name of this CA
   keyfile:
   certfile:
+csr:
+  cn: ca-admin
+  names:
+    - C: US
+      ST: California
+      L: San Francisco
+      O: Hyperledger Fabric
+  host:
+    - localhost
 crl:
   expiry: 24h
 affiliations:

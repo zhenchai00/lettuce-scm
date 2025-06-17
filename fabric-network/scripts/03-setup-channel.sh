@@ -1,55 +1,60 @@
 #!/usr/bin/env bash
-set -euox pipefail
+set -euo pipefail
 
-# --- channel <> profile mapping ---
+# --- channel <> profile mapping (not directly used here, but kept for reference) ---
 declare -A CHANNEL_CONFIG=(
   [farmer-distributor]=FarmerDistributorChannel
   [distributor-retailer]=DistributorRetailerChannel
   [retailer-consumer]=RetailerConsumerChannel
 )
 
-# --- peers in each channel (bare names = container_name) ---
+# --- peers that should join each channel ---
 declare -A CHANNEL_PEERS=(
   [farmer-distributor]="peer0.admin peer0.farmer peer0.distributor"
   [distributor-retailer]="peer0.admin peer0.distributor peer0.retailer"
   [retailer-consumer]="peer0.admin peer0.retailer"
 )
 
-ORDERER_ADDR="orderer.example.com:7050"
-ORDERER_TLS="--tls false"
+# --- for each org, the name used in the anchor-tx filename prefix ---
+declare -A ORG_ANCHOR_PREFIX=(
+  [peer0.admin]=admin
+  [peer0.farmer]=farmers
+  [peer0.distributor]=distributors
+  [peer0.retailer]=retailers
+)
 
-# wrap a peer CLI call
+ORDERER_ADDR="orderer.example.com:7050"
+
+# helper to exec in a peer container
 peerExec() {
-  local CNT=$1
-  shift
-  docker exec "$CNT" bash -lc "$*"
+  docker exec "$1" bash -lc "$2"
 }
 
-echo "=== create/join/update channels ==="
+echo "=== CHANNEL SETUP ==="
+
 for CH in "${!CHANNEL_CONFIG[@]}"; do
-  PROFILE=${CHANNEL_CONFIG[$CH]}
   BLOCK=/etc/hyperledger/configtx/${CH}.block
   TX=/etc/hyperledger/configtx/${CH}.tx
 
   echo
-  echo "--> [$CH] (profile=$PROFILE)"
+  echo "---------------> [$CH] -----------------"
 
-  # 1) create channel via peer0.admin
-  echo "  • create channel on peer0.admin"
+  # 1) CREATE CHANNEL (once, on peer0.admin)
+  echo " -------- create channel block on peer0.admin -------- "
   peerExec peer0.admin "\
     CORE_PEER_LOCALMSPID=AdminMSP \
     CORE_PEER_ADDRESS=peer0.admin.example.com:8051 \
     CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/admin-msp \
     CORE_PEER_TLS_ENABLED=false \
     peer channel create \
-      -o $ORDERER_ADDR $ORDERER_TLS \
+      -o $ORDERER_ADDR \
       -c $CH \
       -f $TX \
       --outputBlock $BLOCK "
+  echo
 
-  # 2) join each peer
+  # 2) JOIN CHANNEL (every peer)
   for P in ${CHANNEL_PEERS[$CH]}; do
-    echo "  • $P joins $CH"
     # map peer name → MSP ID and port:
     case $P in
     peer0.admin)
@@ -68,11 +73,9 @@ for CH in "${!CHANNEL_CONFIG[@]}"; do
       MSP=RetailerMSP
       ADDR=peer0.retailer.example.com:11051
       ;;
-    *)
-      echo "unknown peer $P"
-      exit 1
-      ;;
     esac
+
+    echo " -------- join $P to channel $CH -------- "
 
     peerExec $P "\
       CORE_PEER_LOCALMSPID=$MSP \
@@ -82,28 +85,25 @@ for CH in "${!CHANNEL_CONFIG[@]}"; do
       peer channel join -b $BLOCK"
   done
 
-  # 3) update admin anchor
+  # 3) UPDATE ANCHOR PEERS (one tx per org)
   for P in ${CHANNEL_PEERS[$CH]}; do
-    # map peer name → OrgID token
-    case $P in
-    peer0.admin) ORGNAME=Admin ;;
-    peer0.farmer) ORGNAME=Farmer ;;
-    peer0.distributor) ORGNAME=Distributor ;;
-    peer0.retailer) ORGNAME=Retailer ;;
-    esac
+    PREFIX=${ORG_ANCHOR_PREFIX[$P]}
+    ANCHOR_TX=/etc/hyperledger/configtx/${PREFIX,,}anchors-${CH}.tx
 
-    ANCHOR_TX=/etc/hyperledger/configtx/${ORGNAME,,}anchors-${CH}.tx
-    echo "  • update ${ORGNAME} anchor on $CH"
+    echo
+    echo " ---------- update ${PREFIX} anchor on $CH --------"
     peerExec peer0.admin "\
-    CORE_PEER_LOCALMSPID=AdminMSP \
-    CORE_PEER_ADDRESS=peer0.admin.example.com:8051 \
-    CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/admin-msp \
-    CORE_PEER_TLS_ENABLED=false \
-    peer channel update \
-      -o $ORDERER_ADDR $ORDERER_TLS \
-      -c $CH \
-      -f $ANCHOR_TX"
+      CORE_PEER_LOCALMSPID=AdminMSP \
+      CORE_PEER_ADDRESS=peer0.admin.example.com:8051 \
+      CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/admin-msp \
+      CORE_PEER_TLS_ENABLED=false \
+      peer channel update \
+        -o $ORDERER_ADDR \
+        -c $CH \
+        -f $ANCHOR_TX"
+    echo 
   done
 done
 
-echo "✔ all done."
+echo
+echo "✔ All channels created, peers joined, anchors updated."

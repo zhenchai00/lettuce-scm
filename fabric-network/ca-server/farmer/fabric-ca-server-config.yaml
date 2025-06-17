@@ -10,6 +10,15 @@ ca:
   name: ca-farmer
   keyfile:
   certfile:
+csr:
+  cn: ca-farmer
+  names:
+    - C: US
+      ST: California
+      L: San Francisco
+      O: Hyperledger Fabric
+  host:
+    - localhost
 crl:
   expiry: 24h
 affiliations:

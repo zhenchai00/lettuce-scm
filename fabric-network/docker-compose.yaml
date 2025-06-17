@@ -183,7 +183,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp:/etc/hyperledger/peer/admin-msp
+      # - ./crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -237,7 +237,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp:/etc/hyperledger/peer/admin-msp
+      # - ./crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -291,7 +291,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp:/etc/hyperledger/peer/admin-msp
+      # - ./crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -345,7 +345,7 @@ services:
       - ./channel-artifacts:/etc/hyperledger/configtx
       - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
-      - ./crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp:/etc/hyperledger/peer/admin-msp
+      # - ./crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
