@@ -8,10 +8,7 @@ export const getUsers = async () => {
             createdAt: "desc",
         },
     });
-    if (!users || users.length === 0) {
-        throw new Error("No users found");
-    }
-    return users;
+    return users || [];
 };
 
 export const getUserById = async (id: string) => {
@@ -20,10 +17,7 @@ export const getUserById = async (id: string) => {
         where: { id },
     });
     console.log("Fetched users:", user);
-    if (!user) {
-        throw new Error(`User with ID ${id} not found`);
-    }
-    return user;
+    return user || [];
 };
 
 export const getUserByEmail = async (email: string) => {
@@ -43,10 +37,7 @@ export const getUserByEmail = async (email: string) => {
         where: { email },
     });
     console.log("Fetched user:", user);
-    if (!user) {
-        throw new Error(`User with email ${email} not found`);
-    }
-    return user;
+    return user || [];
 };
 
 export const createUser = async (data: CreateUserData) => {
