@@ -66,7 +66,7 @@ const FarmerProductBatchPage = () => {
                     {isError && (
                         <Alert variant="destructive">
                             <AlertDescription>
-                                Failed to load users. Please try again later.
+                                Failed to load product batches. Please try again later.
                             </AlertDescription>
                         </Alert>
                     )}
