@@ -67,6 +67,7 @@ const EditUserForm: FC<EditUserFormProps> = ({
             queryClient.invalidateQueries({ queryKey: ["admin", "user", userId] });
             form.reset();
             onSuccess();
+            toast.success("User updated successfully.");
         },
         onError: (error: Error) => {
             console.error("Error updating user:", error);

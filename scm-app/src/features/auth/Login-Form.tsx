@@ -90,6 +90,7 @@ const LoginForm = ({
                         router.push("/");
                         break;
                 }
+                toast.success("Login successful!");
             }
         },
         onError: (error) => {

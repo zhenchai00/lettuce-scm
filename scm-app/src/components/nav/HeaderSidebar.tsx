@@ -5,6 +5,7 @@ import { FC, useEffect } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import Head from "next/head";
+import { toast } from "sonner";
 
 interface SidebarHeaderProps {
     title?: string;
@@ -14,7 +15,7 @@ const SidebarHeader: FC<SidebarHeaderProps> = ({ title }) => {
     const { data: session } = useSession();
 
     useEffect(() => {
-        console.log("Session changed:", session?.user);
+        // console.log("Session changed:", session?.user);
     }, [session]);
     return (
         <header className="flex justify-between p-4 border-b">
@@ -42,7 +43,10 @@ const SidebarHeader: FC<SidebarHeaderProps> = ({ title }) => {
                 </Button>
                 <Button
                     variant="ghost"
-                    onClick={() => void signOut({ callbackUrl: "/auth/login" })}
+                    onClick={() => {
+                        void signOut({ callbackUrl: "/auth/login" });
+                        toast.success("You have been logged out successfully.");
+                    }}
                 >
                     <LogOut className="w-5 h-5" />
                 </Button>

@@ -64,6 +64,7 @@ const CreateUserForm: FC<CreateUserFormProps> = ({ onSuccess, onCancel }) => {
             queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
             form.reset();
             onSuccess();
+            toast.success("User created successfully.");
         },
         onError: (error: Error) => {
             console.error("Error creating user:", error);

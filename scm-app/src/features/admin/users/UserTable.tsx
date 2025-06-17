@@ -15,6 +15,8 @@ import EditUserForm from "./EditUserForm";
 import { queryClient } from "@/lib/react-query";
 import { PenSquareIcon } from "lucide-react";
 import DeleteButton from "@/components/common/DeleteButton";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface UserTableProps {
     data: UserRow[];
@@ -28,6 +30,7 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
         mutationFn: deleteUser,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+            toast.success("User deleted successfully.");
             onUpdate();
         },
     });
@@ -41,8 +44,8 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Updated</TableHead>
+                        <TableHead>Created On</TableHead>
+                        <TableHead>Updated On</TableHead>
                         <TableHead>Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -54,10 +57,10 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.role}</TableCell>
                             <TableCell>
-                                {new Date(user.createdAt).toLocaleDateString()}
+                                {format(new Date(user.createdAt), "yyyy-MM-dd HH:mm:ss")}
                             </TableCell>
                             <TableCell>
-                                {new Date(user.updatedAt).toLocaleDateString()}
+                                {format(new Date(user.updatedAt), "yyyy-MM-dd HH:mm:ss")}
                             </TableCell>
                             <TableCell className="flex items-center gap-2">
                                 <Button
@@ -67,8 +70,12 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                                     <PenSquareIcon className="h-4 w-4" />
                                 </Button>
                                 <DeleteButton
-                                    deleteUser={() => deleteMutation.mutate(user.id)}
-                                    isPending={deleteMutation.status === "pending"}
+                                    deleteUser={() =>
+                                        deleteMutation.mutate(user.id)
+                                    }
+                                    isPending={
+                                        deleteMutation.status === "pending"
+                                    }
                                 />
                             </TableCell>
                         </TableRow>
