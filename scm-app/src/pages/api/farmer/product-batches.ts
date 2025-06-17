@@ -47,7 +47,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                 break;
         }
     } catch (error: any) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching product batch:", error);
         if (error.code === "P2002") {
             return res.status(409).json({ error: "Conflict", message: `Unique constraint failed on the field: ${error.meta?.target}` });
         }
