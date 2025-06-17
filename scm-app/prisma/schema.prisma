@@ -167,3 +167,13 @@ model Listing {
   @@index([sellerId], name: "idx_listing_seller") // Index for faster lookups by seller
   @@index([inventoryId], name: "idx_listing_inventory") // Index for faster lookups by inventory
 }
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt], name: "idx_contact_created_at") // Index for faster lookups by creation date
+}
