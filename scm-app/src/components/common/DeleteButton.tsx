@@ -13,11 +13,12 @@ import {
 import { Button } from "../ui/button";
 
 interface DeleteButtonProps {
-    deleteUser: () => void;
+    deleteMutation: () => void;
     isPending?: boolean;
+    description?: string;
 }
 
-const DeleteButton = ({ deleteUser, isPending }: DeleteButtonProps) => {
+const DeleteButton = ({ deleteMutation, isPending, description }: DeleteButtonProps) => {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -30,8 +31,7 @@ const DeleteButton = ({ deleteUser, isPending }: DeleteButtonProps) => {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete the user account.
+                        {description || "This action will permanently delete the item."}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -40,7 +40,7 @@ const DeleteButton = ({ deleteUser, isPending }: DeleteButtonProps) => {
                     <AlertDialogAction
                         onClick={(e) => {
                         e.preventDefault();
-                        deleteUser();
+                        deleteMutation();
                     }}
                         disabled={isPending}
                     >

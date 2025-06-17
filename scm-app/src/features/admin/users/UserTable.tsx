@@ -70,12 +70,13 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                                     <PenSquareIcon className="h-4 w-4" />
                                 </Button>
                                 <DeleteButton
-                                    deleteUser={() =>
+                                    deleteMutation={() =>
                                         deleteMutation.mutate(user.id)
                                     }
                                     isPending={
                                         deleteMutation.status === "pending"
                                     }
+                                    description="This action cannot be undone. This will permanently delete the user and all associated data."
                                 />
                             </TableCell>
                         </TableRow>
