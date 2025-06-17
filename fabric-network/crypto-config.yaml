@@ -1,0 +1,34 @@
+OrdererOrgs:
+  - Name: OrdererOrg
+    Domain: example.com
+    Specs:
+      - Hostname: orderer
+
+PeerOrgs:
+  - Name: AdminOrg
+    Domain: admin.example.com
+    Template:
+      Count: 1        # one peer: peer0.admin.example.com
+    Users:
+      Count: 1        # one Admin user: Admin@admin.example.com
+
+  - Name: FarmerOrg
+    Domain: farmer.example.com
+    Template:
+      Count: 1        # one peer: peer0.farmer.example.com
+    Users:
+      Count: 1        # one Admin user: Admin@farmer.example.com
+
+  - Name: DistributorOrg
+    Domain: distributor.example.com
+    Template:
+      Count: 1        # one peer: peer0.distributor.example.com
+    Users:
+      Count: 1        # one Admin user: Admin@distributor.example.com
+
+  - Name: RetailerOrg
+    Domain: retailer.example.com
+    Template:
+      Count: 1        # one peer: peer0.retailer.example.com
+    Users:
+      Count: 1        # one Admin user: Admin@retailer.example.com

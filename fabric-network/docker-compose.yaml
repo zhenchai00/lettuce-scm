@@ -146,7 +146,6 @@ services:
     ports:
       - "7050:7050"
     volumes:
-      - ./channel-artifacts:/etc/hyperledger/configtx
       - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
     networks:
@@ -181,9 +180,7 @@ services:
       - "8052:8052"
     volumes:
       - ./channel-artifacts:/etc/hyperledger/configtx
-      - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -235,9 +232,7 @@ services:
       - "9052:9052"
     volumes:
       - ./channel-artifacts:/etc/hyperledger/configtx
-      - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/farmer.example.com/users/Admin@farmer.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -289,9 +284,7 @@ services:
       - "10052:10052"
     volumes:
       - ./channel-artifacts:/etc/hyperledger/configtx
-      - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/distributor.example.com/users/Admin@distributor.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -343,9 +336,7 @@ services:
       - "11052:11052"
     volumes:
       - ./channel-artifacts:/etc/hyperledger/configtx
-      - ./crypto-config/ordererOrganizations/example.com/ca/ca-cert.pem:/etc/hyperledger/fabric/orderer-ca/ca.crt
       - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/retailer.example.com/users/Admin@retailer.example.com/msp:/etc/hyperledger/peer/admin-msp
     networks:
       - lettuce-scm-network
     profiles: [peer]
@@ -368,3 +359,29 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+  
+  cli:
+    image: hyperledger/fabric-tools:latest
+    container_name: cli
+    tty: true
+    stdin_open: true
+    depends_on:
+      - orderer.example.com
+      - peer0.admin.example.com
+      - peer0.farmer.example.com
+      - peer0.distributor.example.com
+      - peer0.retailer.example.com
+    environment:
+      - FABRIC_CFG_PATH=/etc/hyperledger/config
+      - CORE_PEER_LOCALMSPID=AdminMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp
+      - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: /bin/bash
+    volumes:
+      - ./config:/etc/hyperledger/config
+      - ./crypto-config:/etc/hyperledger/crypto-config
+      - ./channel-artifacts:/etc/hyperledger/configtx
+    networks:
+      - lettuce-scm-network
+    profiles: [peer]

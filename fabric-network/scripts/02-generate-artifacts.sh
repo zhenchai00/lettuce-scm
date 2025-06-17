@@ -44,8 +44,8 @@ for i in "${!CHANNELS[@]}"; do
   echo "=================== Generating Channel Creation Tx for '$CHANNEL_NAME' ==================="
   configtxgen \
     -profile "$PROFILE" \
-    -outputCreateChannelTx $ARTIFACTS/"$CHANNEL_NAME".tx \
-    -channelID "$CHANNEL_NAME"
+    -channelID "$CHANNEL_NAME" \
+    -outputCreateChannelTx $ARTIFACTS/"$CHANNEL_NAME".tx 
   echo "✔ Created: $ARTIFACTS/$CHANNEL_NAME.tx"
 done
 
