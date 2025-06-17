@@ -10,12 +10,6 @@ first we run the script `install-fabric.sh` to install the required version of H
 ```bash
 ./install-fabric.sh
 ```
-Then we run the script `generate-artifacts.sh` to create the network. 
-```bash
-./scripts/generate-artifacts.sh
-```
-This script will create the necessary artifacts for the network, including the channel configuration and the genesis block.
-
 
 ## Idea on configuration of the Hyperledger Fabric network
 Because of this lettuce supply chain project, we need to have multiple roles in system and the system able to manage the roles which including the action create and remove of the roles.
@@ -27,6 +21,16 @@ The roles are:
 
 So because of this, the configuration for the network will be a bit different from the default configuration. Because of the network is a permissioned network, we need to have a dynamic enrollment and revoke of the roles to each organizations of the network. 
 
+# Setup The Network
+To set up the network, we will run the following commands in the terminal:
+```bash
+./scripts/01-cryptogen.sh
+./scripts/02-generate-artifacts.sh
+
+docker-compose -f docker-compose.yaml --profile peer up -d
+
+./scripts/03-setup-channel.sh
+```
 
 ## Folder Structure 
 ```
