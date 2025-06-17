@@ -16,6 +16,13 @@ declare module "next-auth" {
         accessToken?: string;
         role?: string;
     }
+    interface User {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        accessToken?: string;
+    }
 }
 
 export default NextAuth({
@@ -35,6 +42,9 @@ export default NextAuth({
                         credentials!.email,
                         credentials!.password
                     );
+                    if (!user) {
+                        return null;
+                    }
                     return {
                         id: user.id,
                         email: user.email,
@@ -60,24 +70,23 @@ export default NextAuth({
     callbacks: {
         // 1) On sign-in, `user` is defined. Copy accessToken/role into the NextAuth JWT.
         async jwt({ token, user }) {
-            if (user && "accessToken" in user) {
+            if (user) {
+                token.id = user.id;
+                token.name = user.name;
+                token.email = user.email;
+                token.role = user.role;
                 token.accessToken = user.accessToken;
-                token.role = (user as any).role;
             }
             return token;
         },
         // 2) Each time `useSession()` or getSession() is called, copy token fields into `session`
         async session({ session, token }) {
-            const dbUser = await getUserById(token.sub!);
-            session.accessToken =
-                typeof token.accessToken === "string"
-                    ? token.accessToken
-                    : undefined;
             session.user = {
-                id: token.sub!,
-                name: dbUser?.name || "",
+                id: token.id as string,
+                name: token.name as string,
                 role: token.role as string,
             };
+            session.accessToken = token.accessToken as string | undefined;
             return session;
         },
     },
