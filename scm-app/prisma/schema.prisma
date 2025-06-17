@@ -21,6 +21,29 @@ enum UserRole {
   RETAILER
 }
 
+enum ProduceType {
+  BUTTERHEAD
+  LOOSELEAF
+  OAKLEAF
+  ROMAINE
+  SPINACH
+}
+
+enum ShipmentStatus {
+  ORDERED
+  OUTOFDELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PASSTOLOGISTICS // handover to logistics
+  OUTOFDELIVERY
+  DELIVERED
+  CANCELLED
+}
 
 model User {
   id            String   @id @default(cuid())
@@ -30,4 +53,117 @@ model User {
   role          UserRole
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  // relations
+  batches       BatchProduct[]
+  shipmentsSent  Shipment[] @relation("SentShipments")
+  shipmentsReceived Shipment[] @relation("ReceivedShipments")
+  ordersPlaced  Order[] @relation("PlacedOrders")
+  ordersReceived Order[] @relation("ReceivedOrders")
+  inventory     Inventory[]
+  listings      Listing[] @relation("SellerListings")
+}
+
+model BatchProduct {
+  id            String    @id @default(cuid())
+  produceType   ProduceType
+  description   String?
+  plantingDate  DateTime
+  harvestDate   DateTime? 
+  quantity      Int?
+  blockchainTx  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // relations
+  farmer       User      @relation(fields: [farmerId], references: [id])
+  farmerId     String
+  shipments     Shipment[]
+  orders        Order[]
+  inventory     Inventory[]
+}
+
+model Shipment {
+  id            String          @id @default(cuid())
+  status        ShipmentStatus  @default(ORDERED)
+  shippedDate   DateTime?
+  deliveryDate  DateTime?
+  blockchainTx  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // relation
+  batch      BatchProduct @relation(fields: [batchId], references: [id])
+  batchId    String
+
+  fromUser   User?      @relation("SentShipments", fields: [fromUserId], references: [id])
+  fromUserId String
+
+  toUser     User?      @relation("ReceivedShipments", fields: [toUserId], references: [id])
+  toUserId   String
+
+  @@index([batchId], name: "idx_shipment_batch") // Index for faster lookups by batch
+  @@index([fromUserId], name: "idx_shipment_from_user") // Index for faster lookups by user sending the shipment
+  @@index([toUserId], name: "idx_shipment_to_user") // Index for faster lookups by user receiving the shipment
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  quantity  Int
+  price     Decimal     @db.Decimal(10, 2)
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // relations
+  batch BatchProduct @relation(fields: [batchId], references: [id])
+  batchId String
+
+  fromUser User @relation("PlacedOrders", fields: [fromUserId], references: [id])
+  fromUserId String
+
+  toUser User @relation("ReceivedOrders", fields: [toUserId], references: [id])
+  toUserId String
+
+  @@index([batchId], name: "idx_order_batch") // Index for faster lookups by batch
+  @@index([fromUserId], name: "idx_order_from_user") // Index for faster lookups by user placing the order
+  @@index([toUserId], name: "idx_order_to_user") // Index for faster lookups by user receiving the order
+}
+
+model Inventory {
+  id        String    @id @default(cuid())
+  quantity  Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // relations
+  user     User       @relation(fields: [userId], references: [id])
+  userId   String
+
+  batch    BatchProduct @relation(fields: [batchId], references: [id])
+  batchId  String
+
+  listings Listing[] @relation("InventoryListing")
+
+  @@unique([userId, batchId], name: "uniqueInventory") // Ensure one inventory entry per user and batch
+
+  @@index([userId], name: "idx_inventory_user") // Index for faster lookups by user
+  @@index([batchId], name: "idx_inventory_batch") // Index for faster lookups by batch
+}
+
+model Listing {
+  id        String    @id @default(cuid())
+  price     Decimal   @db.Decimal(10, 2)
+  createdAt DateTime  @default(now())
+
+  // relations
+  inventory Inventory @relation("InventoryListing", fields: [inventoryId], references: [id])
+  inventoryId String
+
+  seller User @relation("SellerListings", fields: [sellerId], references: [id])
+  sellerId String
+
+  @@index([inventoryId, createdAt], name: "idx_listing_inventory_date") // Index for faster lookups
+  @@index([sellerId], name: "idx_listing_seller") // Index for faster lookups by seller
+  @@index([inventoryId], name: "idx_listing_inventory") // Index for faster lookups by inventory
 }
