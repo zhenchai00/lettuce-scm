@@ -1,5 +1,5 @@
 import Head from "next/head";
-import WithRole from "@/lib/auth/with-role";
+import WithRolePage from "@/lib/auth/with-role-page";
 import UserLayout from "@/components/layout/UserLayout";
 import AdminDashboardContent from "@/components/dashboard/AdminDashboardContent";
 
@@ -7,7 +7,7 @@ const AdminDashboard = () => {
     const title = "Admin Dashboard";
 
     return (
-        <WithRole allowedRoles={["ADMIN"]}>
+        <WithRolePage allowedRoles={["ADMIN"]}>
             <UserLayout title={title}>
                 <div>
                     <Head>
@@ -17,7 +17,7 @@ const AdminDashboard = () => {
                 </div>
                 <AdminDashboardContent />
             </UserLayout>
-        </WithRole>
+        </WithRolePage>
     );
 };
 

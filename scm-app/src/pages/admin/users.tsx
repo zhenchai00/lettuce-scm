@@ -5,7 +5,7 @@ import CreateUserForm from "@/features/admin/users/CreateUserForm";
 import { getUsers } from "@/features/admin/users/query";
 import { UserRow } from "@/features/admin/users/type";
 import UserTable from "@/features/admin/users/UserTable";
-import WithRole from "@/lib/auth/with-role";
+import WithRolePage from "@/lib/auth/with-role-page";
 import { queryClient } from "@/lib/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
@@ -30,7 +30,7 @@ const UsersPage = () => {
     };
 
     return (
-        <WithRole allowedRoles={["ADMIN"]}>
+        <WithRolePage allowedRoles={["ADMIN"]}>
             <UserLayout title="User Management">
                 <main className="p-4">
                     <div className="flex items-center justify-between mb-4">
@@ -84,7 +84,7 @@ const UsersPage = () => {
                     )}
                 </main>
             </UserLayout>
-        </WithRole>
+        </WithRolePage>
     );
 };
 

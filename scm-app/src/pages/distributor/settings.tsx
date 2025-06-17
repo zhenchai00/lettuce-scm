@@ -1,16 +1,16 @@
 import UserLayout from "@/components/layout/UserLayout";
 import DistributorUserSettingsForm from "@/features/distributor/settings/DistributorUserSettingsForm";
-import WithRole from "@/lib/auth/with-role";
+import WithRolePage from "@/lib/auth/with-role-page";
 
 const DistributorSettings = () => {
     return (
-        <WithRole allowedRoles={["DISTRIBUTOR"]}>
+        <WithRolePage allowedRoles={["DISTRIBUTOR"]}>
             <UserLayout title="Distributor Settings">
                 <main className="p-4">
                     <DistributorUserSettingsForm />
                 </main>
             </UserLayout>
-        </WithRole>
+        </WithRolePage>
     );
 };
 export default DistributorSettings;

@@ -1,16 +1,16 @@
 import UserLayout from "@/components/layout/UserLayout";
 import RetailerUserSettingsForm from "@/features/retailer/settings/RetailerUserSettingsForm";
-import WithRole from "@/lib/auth/with-role";
+import WithRolePage from "@/lib/auth/with-role-page";
 
 const RetailerSettings = () => {
     return (
-        <WithRole allowedRoles={["RETAILER"]}>
+        <WithRolePage allowedRoles={["RETAILER"]}>
             <UserLayout title="Retailer Settings">
                 <main className="p-4">
                     <RetailerUserSettingsForm />
                 </main>
             </UserLayout>
-        </WithRole>
+        </WithRolePage>
     );
 };
 export default RetailerSettings;

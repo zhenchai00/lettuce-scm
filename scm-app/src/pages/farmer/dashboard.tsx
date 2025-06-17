@@ -1,13 +1,13 @@
 import Head from "next/head";
-import WithRole from "@/lib/auth/with-role";
 import UserLayout from "@/components/layout/UserLayout";
 import FarmerDashboardContent from "@/components/dashboard/FarmerDashboardContent";
+import WithRolePage from "@/lib/auth/with-role-page";
 
 const FarmerDashboard = () => {
     const title = "Farmer Dashboard";
 
     return (
-        <WithRole allowedRoles={["FARMER"]}>
+        <WithRolePage allowedRoles={["FARMER"]}>
             <UserLayout title={title}>
                 <div>
                     <Head>
@@ -17,7 +17,7 @@ const FarmerDashboard = () => {
                 </div>
                 <FarmerDashboardContent />
             </UserLayout>
-        </WithRole>
+        </WithRolePage>
     );
 };
 

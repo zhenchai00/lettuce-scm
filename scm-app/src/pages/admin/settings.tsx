@@ -1,16 +1,16 @@
 import UserLayout from "@/components/layout/UserLayout";
 import UserSettingsForm from "@/features/admin/settings/UserSettingsForm";
-import WithRole from "@/lib/auth/with-role";
+import WithRolePage from "@/lib/auth/with-role-page";
 
 const AdminSettings = () => {
     return (
-        <WithRole allowedRoles={["ADMIN"]}>
+        <WithRolePage allowedRoles={["ADMIN"]}>
             <UserLayout title="Admin Settings">
                 <main className="p-4">
                     <UserSettingsForm />
                 </main>
             </UserLayout>
-        </WithRole>
+        </WithRolePage>
     );
 };
 export default AdminSettings;
