@@ -29,3 +29,31 @@ export const deleteUser = async (id: string) => {
     const response = await apiClient.delete(`/api/admin/users/?id=${id}`);
     return response.data;
 };
+
+
+// fabric enroll user 
+export const fabricEnrollUser = async (data: {
+    enrollmentId: string;
+    enrollmentSecret: string;
+    affiliation: string;
+    role: string;
+    msp: string;
+}) => {
+    const response = await apiClient.post("/api/admin/fabric-users", {
+        enroll: true,
+        ...data,
+    });
+    return response.data;
+};
+
+// fabric revoke user
+export const fabricRevokeUser = async (data: {
+    enrollmentId: string;
+    msp: string;
+}) => {
+    const response = await apiClient.post("/api/admin/fabric-users", {
+        revoke: true,
+        ...data,
+    });
+    return response.data;
+};

@@ -7,16 +7,21 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { FC, useState } from "react";
-import { UserRow } from "./type";
+import { UserMSPMapping, UserRow } from "./type";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { deleteUser } from "./query";
+import { deleteUser, fabricEnrollUser, fabricRevokeUser } from "./query";
 import EditUserForm from "./EditUserForm";
 import { queryClient } from "@/lib/react-query";
-import { PenSquareIcon } from "lucide-react";
+import { FileMinus, FilePlus, PenSquareIcon } from "lucide-react";
 import DeleteButton from "@/components/common/DeleteButton";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import {
+    Tooltip,
+    TooltipTrigger,
+    TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface UserTableProps {
     data: UserRow[];
@@ -33,7 +38,61 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
             toast.success("User deleted successfully.");
             onUpdate();
         },
+        onError: (e: any) => {
+            toast.error(`Failed to delete user: ${e.message}`);
+        },
     });
+
+    const fabricEnrollUserMutation = useMutation({
+        mutationFn: fabricEnrollUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+            toast.success("User enrolled successfully.");
+            onUpdate();
+        },
+        onError: (e: any) => {
+            toast.error(`Failed to enroll user: ${e.message}`);
+        },
+    });
+
+    const fabricRevokeUserMutation = useMutation({
+        mutationFn: fabricRevokeUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+            toast.success("User revoked successfully.");
+            onUpdate();
+        },
+        onError: (e: any) => {
+            toast.error(`Failed to revoke user: ${e.message}`);
+        },
+    });
+
+    const onHandleEnrollUser = (user: UserRow) => {
+        console.log("Enroll user:", user);
+        const enrollmentId = user.email;
+        const enrollmentSecret = "secret";
+        const affiliation = "org1";
+        const role = "client";
+        const msp = UserMSPMapping[user.role] || "Org1MSP";
+        
+        fabricEnrollUserMutation.mutate({
+            enrollmentId,
+            enrollmentSecret,
+            affiliation,
+            role,
+            msp,
+        });
+    };
+
+    const onHandleRevokeUser = (user: UserRow) => {
+        console.log("Revoke user:", user);
+        const enrollmentId = user.email;
+        const msp = UserMSPMapping[user.role] || "Org1MSP";
+        fabricRevokeUserMutation.mutate({
+            enrollmentId,
+            msp,
+        });
+    };
 
     return (
         <div>
@@ -57,18 +116,31 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                             <TableCell>{user.email}</TableCell>
                             <TableCell>{user.role}</TableCell>
                             <TableCell>
-                                {format(new Date(user.createdAt), "yyyy-MM-dd HH:mm:ss")}
+                                {format(
+                                    new Date(user.createdAt),
+                                    "yyyy-MM-dd HH:mm:ss"
+                                )}
                             </TableCell>
                             <TableCell>
-                                {format(new Date(user.updatedAt), "yyyy-MM-dd HH:mm:ss")}
+                                {format(
+                                    new Date(user.updatedAt),
+                                    "yyyy-MM-dd HH:mm:ss"
+                                )}
                             </TableCell>
                             <TableCell className="flex items-center gap-2">
-                                <Button
-                                    size="icon"
-                                    onClick={() => setEditingId(user.id)}
-                                >
-                                    <PenSquareIcon className="h-4 w-4" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            size="icon"
+                                            onClick={() =>
+                                                setEditingId(user.id)
+                                            }
+                                        >
+                                            <PenSquareIcon className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Edit Item</TooltipContent>
+                                </Tooltip>
                                 <DeleteButton
                                     deleteMutation={() =>
                                         deleteMutation.mutate(user.id)
@@ -78,6 +150,28 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                                     }
                                     description="This action cannot be undone. This will permanently delete the user and all associated data."
                                 />
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant={false ? "destructive" : "secondary"}
+                                            size="icon"
+                                            onClick={() =>
+                                                user.fabricEnrollment
+                                                    ? onHandleEnrollUser(user)
+                                                    : onHandleRevokeUser(user)
+                                            }
+                                        >
+                                            {user.fabricEnrollment ? (
+                                                <FilePlus className="h-4 w-4" />
+                                            ) : (
+                                                <FileMinus className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{`${
+                                        user.fabricEnrollment ? "Enroll" : "Revoke"
+                                    } User To Fabric Network`}</TooltipContent>
+                                </Tooltip>
                             </TableCell>
                         </TableRow>
                     ))}

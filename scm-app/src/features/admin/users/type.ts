@@ -9,6 +9,7 @@ export type UserRow = {
     name: string
     email: string
     role: string
+    fabricEnrollment: boolean
     createdAt: string
     updatedAt: string
 }
@@ -20,4 +21,11 @@ export type CreateUserData = UserData & {
 export type UpdateUserData = {
     id: string
     data: UserData
+}
+
+export const UserMSPMapping: Record<string, string> = {
+    ADMIN: "AdminMSP",
+    FARMER: "FarmerMSP",
+    DISTRIBUTOR: "DistributorMSP",
+    RETAILER: "RetailerMSP",
 }

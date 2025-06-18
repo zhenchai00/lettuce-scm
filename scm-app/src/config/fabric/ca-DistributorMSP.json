@@ -1,0 +1,7 @@
+{
+    "url": "http://localhost:10054",
+    "caName": "ca-distributor",
+    "tlsCertPem": {
+        "path": "../../../../fabric-network/crypto-config/peerOrganizations/distributor.example.com/ca/ca.distributor.example.com-cert.pem"
+    }
+}
