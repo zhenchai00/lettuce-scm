@@ -61,6 +61,7 @@
     "jsonwebtoken": "^9.0.2",
     "prisma": "^6.9.0",
     "tailwindcss": "^4.1.8",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
 }
