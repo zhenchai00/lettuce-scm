@@ -11,20 +11,29 @@ import {
     AlertDialogTrigger,
 } from "../ui/alert-dialog";
 import { Button } from "../ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface DeleteButtonProps {
     deleteMutation: () => void;
     isPending?: boolean;
     description?: string;
+    tooltip?: string;
 }
 
-const DeleteButton = ({ deleteMutation, isPending, description }: DeleteButtonProps) => {
+const DeleteButton = ({ deleteMutation, isPending, description, tooltip }: DeleteButtonProps) => {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button size="icon" variant="destructive">
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button size="icon" variant="destructive">
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        {tooltip || "Delete Item"}
+                    </TooltipContent>
+                </Tooltip>
             </AlertDialogTrigger>
 
             <AlertDialogContent>

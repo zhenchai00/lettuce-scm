@@ -18,6 +18,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { deleteProductBatch } from "./query";
 import WithRoleComponent from "@/lib/auth/with-role-component";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface ProductBatchTableProps {
     data: ProductBatchRow[];
@@ -32,7 +33,10 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["farmer", "product-batches"] });
             toast.success("Product batch deleted successfully.");
-        }
+        },
+        onError: (e: any) => {
+            toast.error(`Failed to delete product batch: ${e.message}`);
+        },
     });
 
     return (
@@ -89,12 +93,17 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                                 )}
                             </TableCell>
                             <TableCell className="flex items-center gap-2">
-                                <Button
-                                    size="icon"
-                                    onClick={() => setEditingId(productBatch.id)}
-                                >
-                                    <PenSquareIcon className="h-4 w-4" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            size="icon"
+                                            onClick={() => setEditingId(productBatch.id)}
+                                        >
+                                            <PenSquareIcon className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Edit Item</TooltipContent>
+                                </Tooltip>
                                 <WithRoleComponent allowedRoles={["ADMIN"]}>
                                     <DeleteButton
                                         deleteMutation={() => {
