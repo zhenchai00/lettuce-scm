@@ -30,6 +30,9 @@ To set up the network, we will run the following commands in the terminal:
 docker-compose -f docker-compose.yaml --profile peer up -d
 
 ./scripts/03-setup-channel.sh
+
+cd /scm-app
+pnpx tsx ./scripts/enrollFabricCASuperAdmin.ts
 ```
 
 ## Folder Structure 

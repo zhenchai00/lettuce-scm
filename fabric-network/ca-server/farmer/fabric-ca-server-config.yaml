@@ -16,15 +16,16 @@ csr:
     - C: US
       ST: California
       L: San Francisco
-      O: Hyperledger Fabric
+      O: farmer.example.com
+      OU: org1
   host:
     - localhost
 crl:
   expiry: 24h
 affiliations:
   org1:
-    - admin
-    - peer
+    - users
+    - managers
 registry:
   maxenrollments: -1
   identities:

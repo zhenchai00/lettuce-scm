@@ -15,16 +15,16 @@ csr:
     - C: US
       ST: California
       L: San Francisco
-      O: Hyperledger Fabric
+      O: orderer.example.com
+      OU: org1
   host:
     - localhost
 crl:
   expiry: 24h
 affiliations:
   org1:
-    - orderer
-    - admin
-    - peer
+    - users
+    - managers
 registry:
   maxenrollments: -1 # Unlimited enrollments
   identities:
