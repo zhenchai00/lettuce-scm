@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth/role-guard";
-import { createProductBatch, deleteProductBatch, getProductBatchByBlockchainTx, getProductBatchById, getProductBatches, updateProductBatch } from "@/services/product-batch";
+import { createProductBatch, deleteProductBatch, getAvailableProductBatches, getProductBatchByBlockchainTx, getProductBatchById, getProductBatches, updateProductBatch } from "@/services/product-batch";
 import { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
@@ -30,6 +30,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                     const { blockchainTx } = req.query;
                     const user = await getProductBatchByBlockchainTx(blockchainTx as string);
                     return res.status(200).json(user);
+                }
+                if (req.query.avaliable) {
+                    const avaliableProductBatches = await getAvailableProductBatches();
+                    return res.status(200).json(avaliableProductBatches);
                 }
                 const users = await getProductBatches();
                 return res.status(200).json(users);

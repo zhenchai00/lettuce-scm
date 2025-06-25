@@ -1,3 +1,4 @@
+import { UserRow } from "@/features/admin/users/type";
 import { ProduceType } from "generated/prisma";
 
 export type ProductBatchData = {
@@ -20,6 +21,7 @@ export type ProductBatchRow = {
     farmerId: string;
     createdAt: Date;
     updatedAt: Date;
+    farmer?: UserRow;
 };
 
 export type CreateProductBatchData = Partial<ProductBatchData> & {

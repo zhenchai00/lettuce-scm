@@ -23,7 +23,6 @@ import {
     TooltipTrigger,
     TooltipContent,
 } from "@/components/ui/tooltip";
-import FarmerNameCell from "./FarmerNameCell";
 
 interface ProductBatchTableProps {
     data: ProductBatchRow[];
@@ -93,9 +92,7 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                                     : "N/A"}
                             </TableCell>
                             <TableCell>
-                                <FarmerNameCell
-                                    farmerId={productBatch.farmerId}
-                                />
+                                {productBatch.farmer?.name}
                             </TableCell>
                             <TableCell>
                                 {format(

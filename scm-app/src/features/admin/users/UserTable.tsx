@@ -7,13 +7,13 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { FC, useState } from "react";
-import { UserMSPMapping, UserRow } from "./type";
+import { UserRow } from "./type";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { deleteUser, fabricEnrollUser, fabricRevokeUser } from "./query";
+import { deleteUser } from "./query";
 import EditUserForm from "./EditUserForm";
 import { queryClient } from "@/lib/react-query";
-import { FileMinus, FilePlus, PenSquareIcon } from "lucide-react";
+import { PenSquareIcon } from "lucide-react";
 import DeleteButton from "@/components/common/DeleteButton";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -40,30 +40,6 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
         },
         onError: (e: any) => {
             toast.error(`Failed to delete user: ${e.message}`);
-        },
-    });
-
-    const fabricEnrollUserMutation = useMutation({
-        mutationFn: fabricEnrollUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-            toast.success("User enrolled successfully.");
-            onUpdate();
-        },
-        onError: (e: any) => {
-            toast.error(`Failed to enroll user: ${e.message}`);
-        },
-    });
-
-    const fabricRevokeUserMutation = useMutation({
-        mutationFn: fabricRevokeUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-            toast.success("User revoked successfully.");
-            onUpdate();
-        },
-        onError: (e: any) => {
-            toast.error(`Failed to revoke user: ${e.message}`);
         },
     });
 
