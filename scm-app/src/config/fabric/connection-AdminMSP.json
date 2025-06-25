@@ -1,14 +1,11 @@
 {
     "name": "lettuce-scm-app",
     "version": "1.0.0",
-    "organization": {
+    "organizations": {
         "AdminOrg": {
             "mspid": "AdminMSP",
             "peers": [
                 "peer0.admin.example.com"
-            ],
-            "certificateAuthorities": [
-                "ca-admin"
             ]
         }
     },
@@ -20,18 +17,6 @@
             },
             "tlsCACerts": {
                 "path": "../../../../fabric-network/crypto-config/peerOrganizations/admin.example.com/tlsca/tlsca.admin.example.com-cert.pem"
-            }
-        }
-    },
-    "certificateAuthorities": {
-        "ca-admin": {
-            "url": "http://localhost:8054",
-            "caName": "ca-admin",
-            "httpOptions": {
-                "verify": false
-            },
-            "tlsCACerts": {
-                "path": "../../../../fabric-network/crypto-config/peerOrganizations/admin.example.com/ca/ca.admin.example.com-cert.pem"
             }
         }
     },

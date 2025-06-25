@@ -1,14 +1,11 @@
 {
     "name": "lettuce-scm-app",
     "version": "1.0.0",
-    "organization": {
+    "organizations": {
         "DistributorOrg": {
             "mspid": "DistributorMSP",
             "peers": [
                 "peer0.distributor.example.com"
-            ],
-            "certificateAuthorities": [
-                "ca-distributor"
             ]
         }
     },
@@ -20,18 +17,6 @@
             },
             "tlsCACerts": {
                 "path": "../../../../fabric-network/crypto-config/peerOrganizations/distributor.example.com/tlsca/tlsca.distributor.example.com-cert.pem"
-            }
-        }
-    },
-    "certificateAuthorities": {
-        "ca-distributor": {
-            "url": "http://localhost:10054",
-            "caName": "ca-distributor",
-            "httpOptions": {
-                "verify": false
-            },
-            "tlsCACerts": {
-                "path": "../../../../fabric-network/crypto-config/peerOrganizations/distributor.example.com/ca/ca.distributor.example.com-cert.pem"
             }
         }
     },
