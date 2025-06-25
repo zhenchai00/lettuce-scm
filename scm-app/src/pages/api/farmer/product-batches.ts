@@ -36,9 +36,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                 break;
             case "POST":
                 const productBatchSchema = z.object({
-                    name: z.string().min(1, "Name is required"),
-                    quantity: z.number().min(1, "Quantity must be greater than 0"),
                     produceType: z.string().min(1, "Produce type is required"),
+                    description: z.string().optional(),
                     blockchainTx: z.string().optional(),
                 });
                 const result = productBatchSchema.safeParse(req.body);
@@ -53,9 +52,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                 break;
             case "PUT":
                 const updateProductBatchSchema = z.object({
-                    id: z.string().min(1, "ID is required"),
-                    name: z.string().min(1, "Name is required").optional(),
-                    quantity: z.number().min(1, "Quantity must be greater than 0").optional(),
+                    quantity: z.number().min(1, "Quantity must be greater than 0"),
                     produceType: z.string().min(1, "Produce type is required").optional(),
                     blockchainTx: z.string().optional(),
                 });

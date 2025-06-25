@@ -32,11 +32,12 @@ import { getUserById, updateUser } from "./query";
 import { Loader } from "lucide-react";
 import { toast } from "sonner";
 import { queryClient } from "@/lib/react-query";
+import { USER_ROLES } from "@/lib/constant";
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
     email: z.string().email("Invalid email address"),
-    role: z.enum(["ADMIN", "FARMER", "DISTRIBUTOR", "RETAILER"]),
+    role: z.enum(USER_ROLES),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -151,12 +152,7 @@ const EditUserForm: FC<EditUserFormProps> = ({
                                                 <SelectValue placeholder="Select role" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {[
-                                                    "ADMIN",
-                                                    "FARMER",
-                                                    "DISTRIBUTOR",
-                                                    "RETAILER",
-                                                ].map((role) => (
+                                                {USER_ROLES.map((role) => (
                                                     <SelectItem
                                                         key={role}
                                                         value={role}

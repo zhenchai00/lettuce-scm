@@ -40,6 +40,21 @@ export const getUserByEmail = async (email: string) => {
     return user || [];
 };
 
+export const getUsersByRole = async (role: string) => {
+    if (!role) {
+        throw new Error("Role is required to fetch users");
+    }
+    console.log("Fetching users with role:", role);
+    const users = await prisma.user.findMany({
+        where: { role: role as any }, 
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    console.log("Fetched users:", users);
+    return users || [];
+};
+
 export const createUser = async (data: CreateUserData) => {
     const existingUser = await prisma.user.findUnique({
         where: { email: data.email },

@@ -32,12 +32,13 @@ import { z } from "zod";
 import { createUser } from "./query";
 import { toast } from "sonner";
 import { queryClient } from "@/lib/react-query";
+import { USER_ROLES } from "@/lib/constant";
 
 const userSchema = z.object({
     name: z.string().min(2).max(100),
     email: z.string().email(),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    role: z.enum(["ADMIN", "FARMER", "DISTRIBUTOR", "RETAILER"]),
+    role: z.enum(USER_ROLES)
 });
 
 type UserForm = z.infer<typeof userSchema>;
@@ -154,12 +155,7 @@ const CreateUserForm: FC<CreateUserFormProps> = ({ onSuccess, onCancel }) => {
                                             <SelectValue placeholder="Select role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {[
-                                                "ADMIN",
-                                                "FARMER",
-                                                "DISTRIBUTOR",
-                                                "RETAILER",
-                                            ].map((role) => (
+                                            {USER_ROLES.map((role) => (
                                                 <SelectItem
                                                     key={role}
                                                     value={role}

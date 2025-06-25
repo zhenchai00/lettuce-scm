@@ -18,7 +18,12 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { deleteProductBatch } from "./query";
 import WithRoleComponent from "@/lib/auth/with-role-component";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+    Tooltip,
+    TooltipTrigger,
+    TooltipContent,
+} from "@/components/ui/tooltip";
+import FarmerNameCell from "./FarmerNameCell";
 
 interface ProductBatchTableProps {
     data: ProductBatchRow[];
@@ -31,7 +36,9 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
     const deleteMutation = useMutation({
         mutationFn: (id: string) => deleteProductBatch(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["farmer", "product-batches"] });
+            queryClient.invalidateQueries({
+                queryKey: ["farmer", "product-batches"],
+            });
             toast.success("Product batch deleted successfully.");
         },
         onError: (e: any) => {
@@ -51,6 +58,7 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                         <TableHead>Harvest Date</TableHead>
                         <TableHead>Quantity</TableHead>
                         <TableHead>Blockchain TX</TableHead>
+                        <TableHead>Farmer Name</TableHead>
                         <TableHead>Created On</TableHead>
                         <TableHead>Updated On</TableHead>
                         <TableHead>Actions</TableHead>
@@ -75,10 +83,19 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                                     : "N/A"}
                             </TableCell>
                             <TableCell>
-                                {productBatch.quantity ? productBatch.quantity : "N/A"}
+                                {productBatch.quantity
+                                    ? productBatch.quantity
+                                    : "N/A"}
                             </TableCell>
                             <TableCell>
-                                {productBatch.blockchainTx ? productBatch.blockchainTx : "N/A"}
+                                {productBatch.blockchainTx
+                                    ? productBatch.blockchainTx
+                                    : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                                <FarmerNameCell
+                                    farmerId={productBatch.farmerId}
+                                />
                             </TableCell>
                             <TableCell>
                                 {format(
@@ -97,7 +114,9 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                                     <TooltipTrigger asChild>
                                         <Button
                                             size="icon"
-                                            onClick={() => setEditingId(productBatch.id)}
+                                            onClick={() =>
+                                                setEditingId(productBatch.id)
+                                            }
                                         >
                                             <PenSquareIcon className="h-4 w-4" />
                                         </Button>
@@ -107,7 +126,9 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                                 <WithRoleComponent allowedRoles={["ADMIN"]}>
                                     <DeleteButton
                                         deleteMutation={() => {
-                                            deleteMutation.mutate(productBatch.id);
+                                            deleteMutation.mutate(
+                                                productBatch.id
+                                            );
                                         }}
                                         isPending={
                                             deleteMutation.status === "pending"

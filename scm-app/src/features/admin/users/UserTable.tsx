@@ -67,33 +67,6 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
         },
     });
 
-    const onHandleEnrollUser = (user: UserRow) => {
-        console.log("Enroll user:", user);
-        const enrollmentId = user.email;
-        const enrollmentSecret = "secret";
-        const affiliation = "org1";
-        const role = "client";
-        const msp = UserMSPMapping[user.role] || "Org1MSP";
-        
-        fabricEnrollUserMutation.mutate({
-            enrollmentId,
-            enrollmentSecret,
-            affiliation,
-            role,
-            msp,
-        });
-    };
-
-    const onHandleRevokeUser = (user: UserRow) => {
-        console.log("Revoke user:", user);
-        const enrollmentId = user.email;
-        const msp = UserMSPMapping[user.role] || "Org1MSP";
-        fabricRevokeUserMutation.mutate({
-            enrollmentId,
-            msp,
-        });
-    };
-
     return (
         <div>
             <Table>
@@ -150,28 +123,6 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                                     }
                                     description="This action cannot be undone. This will permanently delete the user and all associated data."
                                 />
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant={false ? "destructive" : "secondary"}
-                                            size="icon"
-                                            onClick={() =>
-                                                user.fabricEnrollment
-                                                    ? onHandleRevokeUser(user)
-                                                    : onHandleEnrollUser(user)
-                                            }
-                                        >
-                                            {user.fabricEnrollment ? (
-                                                <FileMinus className="h-4 w-4" />
-                                            ) : (
-                                                <FilePlus className="h-4 w-4" />
-                                            )}
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>{`${
-                                        user.fabricEnrollment ? "Revoke" : "Enroll"
-                                    } User To Fabric Network`}</TooltipContent>
-                                </Tooltip>
                             </TableCell>
                         </TableRow>
                     ))}

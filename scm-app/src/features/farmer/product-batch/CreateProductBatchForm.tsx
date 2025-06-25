@@ -25,13 +25,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { FC } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { FC, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { queryClient } from "@/lib/react-query";
-import { createProductBatch } from "./query";
+import { createProductBatch, getFarmerList } from "./query";
 import {
     Popover,
     PopoverContent,
@@ -43,10 +43,12 @@ import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useSession } from "next-auth/react";
 import { useGenericErrorHandler } from "@/hooks/use-GenericErrorHandling";
+import { FarmerDetails } from "./type";
+import { PRODUCE_TYPES } from "@/lib/constant";
 
 const FormSchema = z.object({
     produceType: z.enum(
-        ["BUTTERHEAD", "LOOSELEAF", "OAKLEAF", "ROMAINE", "SPINACH"],
+        PRODUCE_TYPES,
         {
             errorMap: () => ({ message: "Produce type is required" }),
         }
@@ -62,6 +64,7 @@ const FormSchema = z.object({
                 message: "Planting date must be between 2020-01-01 and today.",
             }
         ),
+    farmer: z.string().optional(),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -76,14 +79,33 @@ const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
     onCancel,
 }) => {
     const { data: session } = useSession();
+    const userRole = session?.user?.role;
+
+    const {
+        data: farmers = [],
+        isLoading: isFarmersLoading,
+        isError: isFarmersError,
+    } = useQuery<FarmerDetails[]>({
+        queryKey: ["farmer", "users"],
+        queryFn: getFarmerList,
+        enabled: userRole === "ADMIN",
+    })
+
     const form = useForm<FormData>({
         resolver: zodResolver(FormSchema),
         defaultValues: {
             produceType: "BUTTERHEAD", // Default produce type
             description: "",
             plantingDate: new Date(),
+            farmer: userRole === "FARMER" ? session?.user?.id : undefined,
         },
     });
+
+    useMemo(() => {
+        if (userRole === "FARMER" && session?.user?.id) {
+            form.setValue("farmer", session.user.id);
+        }
+    }, [userRole, session?.user?.id, form]);
 
     const mutation = useMutation({
         mutationFn: createProductBatch,
@@ -99,9 +121,17 @@ const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
     });
 
     const onSubmit = (data: FormData) => {
+        if (!data.farmer && userRole === "ADMIN") {
+            form.setError("farmer", {
+                type: "manual",
+                message: "Farmer is required",
+            });
+            return;
+        }
+        
         mutation.mutate({
             ...data,
-            farmer: session?.user?.id || "",
+            farmer: data.farmer || session?.user?.id || "",
         });
     };
 
@@ -120,6 +150,47 @@ const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-4"
                     >
+                        {userRole === "ADMIN" && (
+                            <FormField
+                                control={form.control}
+                                name="farmer"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Farmer</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a farmer" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {isFarmersLoading ? (
+                                                    <SelectItem value="loading">
+                                                        Loading...
+                                                    </SelectItem>
+                                                ) : isFarmersError ? (
+                                                    <SelectItem value="error">
+                                                        Error loading farmers
+                                                    </SelectItem>
+                                                ) : (
+                                                    farmers.map((farmer) => (
+                                                        <SelectItem
+                                                            key={farmer.id}
+                                                            value={farmer.id}
+                                                        >
+                                                            {farmer.name}{" "}
+                                                            ({farmer.id})
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                         <FormField
                             control={form.control}
                             name="produceType"
@@ -134,13 +205,7 @@ const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
                                             <SelectValue placeholder="Select role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {[
-                                                "BUTTERHEAD",
-                                                "LOOSELEAF",
-                                                "OAKLEAF",
-                                                "ROMAINE",
-                                                "SPINACH",
-                                            ].map((produceType) => (
+                                            {PRODUCE_TYPES.map((produceType) => (
                                                 <SelectItem
                                                     key={produceType}
                                                     value={produceType}
@@ -185,7 +250,7 @@ const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
                                                 <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-[240px] pl-3 text-left font-normal",
+                                                        "w-full pl-3 text-left font-normal",
                                                         !field.value &&
                                                             "text-muted-foreground"
                                                     )}
