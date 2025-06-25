@@ -157,19 +157,19 @@ const UserTable: FC<UserTableProps> = ({ data, onUpdate }) => {
                                             size="icon"
                                             onClick={() =>
                                                 user.fabricEnrollment
-                                                    ? onHandleEnrollUser(user)
-                                                    : onHandleRevokeUser(user)
+                                                    ? onHandleRevokeUser(user)
+                                                    : onHandleEnrollUser(user)
                                             }
                                         >
                                             {user.fabricEnrollment ? (
-                                                <FilePlus className="h-4 w-4" />
-                                            ) : (
                                                 <FileMinus className="h-4 w-4" />
+                                            ) : (
+                                                <FilePlus className="h-4 w-4" />
                                             )}
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>{`${
-                                        user.fabricEnrollment ? "Enroll" : "Revoke"
+                                        user.fabricEnrollment ? "Revoke" : "Enroll"
                                     } User To Fabric Network`}</TooltipContent>
                                 </Tooltip>
                             </TableCell>

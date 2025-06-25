@@ -9,6 +9,7 @@ export const buildCAClient = (msp: string) => {
             "utf8"
         )
     );
+    console.log("caClient.ts CA Info:", caInfo);
     const tlsCertPem = fs.readFileSync(
         path.resolve(process.cwd(), caInfo.tlsCertPem.path),
         "utf8"
