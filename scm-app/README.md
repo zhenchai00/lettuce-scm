@@ -38,3 +38,50 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+
+
+
+# Query 
+```sql
+INSERT INTO public."User" (id,email,"role","createdAt","updatedAt",name,"passwordHash") VALUES
+	 ('cmcbx4iyv0000vsrs5b2o280p','admin1@test.com','ADMIN'::public."UserRole",'2025-06-25 12:16:04.615','2025-06-25 12:16:04.615','admin1@test.com','$2b$10$SkChZzD7AF.0sI64C6FgWei0hh41/0RCyg/W9vc5SBkmJTgLc21mi');
+```
+
+# Process 
+1. Farmer plants and records the batch product 
+   - Farmer Actions
+     - batchProductCreate
+     - productEventCreate - eventType: PLANTING - batchId, userId, plantingDate, txhash
+2. Farmer harvests the batch product
+   - Farmer Actions
+	 - batchProductUpdate - havestDate, quantity
+	 - productEventCreate - eventType: HARVESTING - batchid, havestDate, quantity, txhash
+3.  Distributor requests the batch product from the Farmer
+   - Ditributor Actions
+	 - shipmentCreate - status: ORDERED, distributorId
+4. Farmer approves the shipment request
+   - Farmer Actions
+	 - shipmentUpdate - status: OUTOFDELIVERY, shipmentId
+	 - productEventCreate - eventType: SHIPPED - shipmentId, txhash
+5. Distributor receives the batch product
+   - Distributor Actions
+     - shipmentUpdate - status: RECEIVED, shipmentId
+	 - productEventCreate - eventType: DELIVERED - shipmentId, txhash
+6. Retailer requests the batch product from the Distributor
+   - Retailer Actions
+	 - shipmentCreate - status: ORDERED, retailerId
+7. Distributor approves the shipment request
+   - Distributor Actions
+   -  shipmentUpdate - status: OUTOFDELIVERY, shipmentId
+   - productEventCreate - eventType: SHIPPED - shipmentId, txhash
+8. Retailer receives the batch product
+   - Retailer Actions
+   - shipmentUpdate - status: RECEIVED, shipmentId
+   - productEventCreate - eventType: DELIVERED - shipmentId, txhash
+
+4A Farmer rejects the shipment request
+   - Farmer Actions
+	 - shipmentUpdate - status: REJECTED, shipmentId
+7A Distributor rejects the shipment request
+   - Distributor Actions
+  - shipmentUpdate - status: REJECTED, shipmentId
