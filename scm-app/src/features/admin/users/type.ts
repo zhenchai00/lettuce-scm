@@ -9,7 +9,6 @@ export type UserRow = {
     name: string
     email: string
     role: string
-    fabricEnrollment: boolean
     createdAt: string
     updatedAt: string
 }

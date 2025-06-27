@@ -20,27 +20,35 @@ interface DeleteButtonProps {
     tooltip?: string;
 }
 
-const DeleteButton = ({ deleteMutation, isPending, description, tooltip }: DeleteButtonProps) => {
+const DeleteButton = ({
+    deleteMutation,
+    isPending,
+    description,
+    tooltip,
+}: DeleteButtonProps) => {
     return (
         <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button size="icon" variant="destructive">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            size="icon"
+                            variant="destructive"
+                            title={tooltip || "Delete Item"}
+                        >
                             <Trash2 className="h-4 w-4" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        {tooltip || "Delete Item"}
-                    </TooltipContent>
-                </Tooltip>
-            </AlertDialogTrigger>
+                    </AlertDialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>{tooltip || "Delete Item"}</TooltipContent>
+            </Tooltip>
 
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        {description || "This action will permanently delete the item."}
+                        {description ||
+                            "This action will permanently delete the item."}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
@@ -48,9 +56,9 @@ const DeleteButton = ({ deleteMutation, isPending, description, tooltip }: Delet
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={(e) => {
-                        e.preventDefault();
-                        deleteMutation();
-                    }}
+                            e.preventDefault();
+                            deleteMutation();
+                        }}
                         disabled={isPending}
                     >
                         {isPending ? "Deleting..." : "Confirm Delete"}

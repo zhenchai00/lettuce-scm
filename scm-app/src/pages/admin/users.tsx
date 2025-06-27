@@ -75,7 +75,7 @@ const UsersPage = () => {
                                     data={users}
                                     onUpdate={() =>
                                         queryClient.invalidateQueries({
-                                            queryKey: ["users"],
+                                            queryKey: ["admin", "users"],
                                         })
                                     }
                                 />

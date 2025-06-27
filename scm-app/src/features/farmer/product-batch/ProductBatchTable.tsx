@@ -23,6 +23,7 @@ import {
     TooltipTrigger,
     TooltipContent,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductBatchTableProps {
     data: ProductBatchRow[];
@@ -69,31 +70,37 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                             <TableCell>{productBatch.id}</TableCell>
                             <TableCell>{productBatch.produceType}</TableCell>
                             <TableCell>{productBatch.description}</TableCell>
-                            <TableCell>
-                                {new Date(
-                                    productBatch.plantingDate
-                                ).toLocaleDateString()}
+                            <TableCell className="text-center">
+                                {
+                                    productBatch.harvestDate ? (
+                                        format(new Date(productBatch.plantingDate), "yyyy-MM-dd")
+                                    ) : (
+                                        <Badge className="bg-yellow-500 text-white">
+                                            {format(new Date(productBatch.plantingDate), "yyyy-MM-dd")}
+                                        </Badge>
+                                    )
+                                }
                             </TableCell>
-                            <TableCell>
-                                {productBatch.harvestDate
-                                    ? new Date(
-                                          productBatch.harvestDate
-                                      ).toLocaleDateString()
-                                    : "N/A"}
+                            <TableCell className="text-center">
+                                {productBatch.harvestDate ? (
+                                    <Badge className="bg-green-500 text-white">
+                                        {format(new Date(productBatch.harvestDate), "yyyy-MM-dd")}
+                                    </Badge>
+                                ) : (
+                                    "N/A"
+                                )}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-center">
                                 {productBatch.quantity
                                     ? productBatch.quantity
                                     : "N/A"}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-center">
                                 {productBatch.blockchainTx
                                     ? productBatch.blockchainTx
                                     : "N/A"}
                             </TableCell>
-                            <TableCell>
-                                {productBatch.farmer?.name}
-                            </TableCell>
+                            <TableCell>{productBatch.farmer?.name}</TableCell>
                             <TableCell>
                                 {format(
                                     new Date(productBatch.createdAt),

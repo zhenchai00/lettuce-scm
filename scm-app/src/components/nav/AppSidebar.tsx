@@ -21,7 +21,7 @@ const AppSidebar = ({...props}) => {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton>
-                            <Link href={`/${session?.user.role}/dashboard`}>
+                            <Link href={`/${session?.user.role.toLowerCase()}/dashboard`}>
                                 <h2 className="text-lg font-bold">
                                     SupplyChain
                                 </h2>

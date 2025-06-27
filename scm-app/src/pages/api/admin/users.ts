@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth/role-guard";
-import { createUser, deleteUser, getUserByEmail, getUserById, getUsers, updateUser } from "@/services/users";
+import { createUser, deleteUser, getUserByEmail, getUserById, getUsers, getUsersByRole, updateUser } from "@/services/users";
 import { NextApiRequest, NextApiResponse } from "next";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -29,6 +29,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                     const { email } = req.query;
                     const user = await getUserByEmail(email as string);
                     return res.status(200).json(user);
+                }
+                if (req.query.role) {
+                    if (typeof req.query.role !== "string") {
+                        return res.status(400).json({ error: "Bad Request", message: "Role must be a string" });
+                    }
+                    if (req.query.role === "undefined" || req.query.role === "null") {
+                        return res.status(400).json({ error: "Bad Request", message: "Role cannot be undefined or null" });
+                    }
+                    const { role } = req.query;
+                    const users = await getUsersByRole(role as string);
+                    return res.status(200).json(users);
                 }
                 const users = await getUsers();
                 return res.status(200).json(users);
