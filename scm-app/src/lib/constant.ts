@@ -12,3 +12,10 @@ export const USER_ROLES = [
     "DISTRIBUTOR",
     "RETAILER",
 ] as const;
+
+export const SHIPMENT_STATUS = [
+    "ORDERED",
+    "OUTOFDELIVERY",
+    "DELIVERED",
+    "CANCELLED",
+] as const;
