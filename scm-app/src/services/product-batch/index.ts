@@ -77,7 +77,19 @@ export const createProductBatch = async (data: CreateProductBatchData) => {
             farmer: true,
         },
     });
-    console.log("Created product batch:", productBatch);
+    console.log("Created product batch - " + productBatch.id, productBatch);
+
+    const productEvent = await prisma.productEvent.create({
+        data: {
+            batch: { connect: { id: productBatch.id } },
+            user: { connect: { id: data.farmer } },
+            eventType: "PLANTED",
+            description: `${productBatch.farmer?.name} planted product batch for ${productBatch.produceType}`,
+            timestamp: new Date(),
+        },
+    });
+    console.log("Created product event - " + productEvent.id, productEvent);
+
     return productBatch;
 };
 
@@ -100,7 +112,7 @@ export const updateProductBatch = async (
             farmer: true,
         },
     });
-    console.log("Updated product batch:", productBatch);
+    console.log("Updated product batch - " + productBatch.id, productBatch);
 
     if (productBatch.quantity && productBatch.farmerId) {
         // Create or update inventory record
@@ -117,6 +129,18 @@ export const updateProductBatch = async (
         });
         console.log("Created inventory record:", inventory);
     }
+
+    const productEvent = await prisma.productEvent.create({
+        data: {
+            batch: { connect: { id: productBatch.id } },
+            user: { connect: { id: productBatch.farmerId } },
+            eventType: "HARVESTED",
+            description: `${productBatch.farmer?.name} harvested product batch for ${productBatch.produceType}`,
+            timestamp: new Date(),
+        },
+    });
+    console.log("Created product event - " + productEvent.id, productEvent);
+
     return productBatch;
 };
 
@@ -126,6 +150,6 @@ export const deleteProductBatch = async (id: string) => {
     const productBatch = await prisma.batchProduct.delete({
         where: { id },
     });
-    console.log("Deleted product batch:", productBatch);
+    console.log("Deleted product batch - " + productBatch.id, productBatch);
     return productBatch;
 };

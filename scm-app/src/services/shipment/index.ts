@@ -60,7 +60,7 @@ export const createShipment = async (data: any) => {
             },
         },
         include: {
-            batch: true, // Include the batch details
+            batch: true,
             user: true,
         },
     });
@@ -82,8 +82,13 @@ export const createShipment = async (data: any) => {
     }
     const shipment = await prisma.shipment.create({
         data: shipmentData,
+        include: {
+            batch: true,
+            fromUser: true,
+            toUser: true,
+        },
     });
-    console.log("Created shipment:", shipment);
+    console.log("Created shipment - " + shipment.id, shipment);
     return shipment;
 };
 
@@ -114,8 +119,13 @@ export const updateShipment = async (id: string, data: any) => {
             ...data,
             updatedAt: new Date(),
         },
+        include: {
+            batch: true,
+            fromUser: true,
+            toUser: true,
+        },
     });
-    console.log("Updated shipment:", shipment);
+    console.log("Updated shipment - " + shipment.id, shipment);
 
     // update sender inventory if the status is OUTOFDELIVERY
     if (data.status === "OUTOFDELIVERY") {
@@ -143,8 +153,26 @@ export const updateShipment = async (id: string, data: any) => {
                     userId: shipment.fromUserId,
                 },
             },
+            include: {
+                batch: true,
+                user: true,
+            },
         });
-        console.log("Updated inventory:", newInventory);
+        console.log("Updated inventory - " + newInventory.id, newInventory);
+
+        // update product event 
+        const productEvent = await prisma.productEvent.create({
+            data: {
+                batchId: shipment.batchId,
+                userId: shipment.fromUserId,
+                shipmentId: shipment.id,
+                quantity: (shipment.quantity || 0),
+                eventType: "SHIPPED",
+                description: `Shipment ${shipment.id} shipped from ${shipment.fromUser?.name} to ${shipment.toUser?.name}`,
+                timestamp: new Date(),
+            },
+        });
+        console.log("Created product event - " + productEvent.id, productEvent);
     }
 
     // update receiver inventory if the status is DELIVERED
@@ -180,10 +208,14 @@ export const updateShipment = async (id: string, data: any) => {
                     userId: shipment.toUserId,
                 },
             },
+            include: {
+                batch: true,
+                user: true,
+            }
         });
         console.log("Updated inventory:", newInventory);
 
-        if (currentInventory?.user.role === "RETAILER") {
+        if (newInventory.user.role === "RETAILER") {
             const batch = await prisma.shipment.update({
                 where: { id },
                 data: {
@@ -191,7 +223,22 @@ export const updateShipment = async (id: string, data: any) => {
                     trackingKey: `${newInventory.userId}-${newInventory.id}-${newInventory.batchId}`,
                 }
             });
+            console.log("Updated shipment with tracking key - " + batch.id, batch);
         }
+
+        // update product event
+        const productEvent = await prisma.productEvent.create({
+            data: {
+                batchId: shipment.batchId,
+                shipmentId: shipment.id,
+                userId: shipment.toUserId,
+                quantity: shipment.quantity || 0,
+                eventType: "DELIVERED",
+                description: `Shipment ${shipment.id} received by to ${shipment.toUser?.name}`,
+                timestamp: new Date(),
+            },
+        });
+        console.log("Created product event - " + productEvent.id, productEvent);
     }
     return shipment;
 };
