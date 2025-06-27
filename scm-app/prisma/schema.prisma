@@ -127,6 +127,7 @@ model ProductEvent {
   timestamp   DateTime    @default(now())
   txHash      String?     @unique         // optional blockchain transaction hash
   quantity    Int?                        // quantity affected by the event
+  description String?                     // optional description of the event
 
   // relations
   batch       BatchProduct @relation(fields: [batchId], references: [id])
