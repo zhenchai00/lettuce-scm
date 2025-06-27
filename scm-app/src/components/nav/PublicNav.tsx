@@ -6,12 +6,14 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useSession } from "next-auth/react";
 
 interface PublicNavProps {
     visibleLogin?: boolean;
 }
 
 const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
+    const { data: session } = useSession();
     const router = useRouter();
     const [open, setOpen] = useState(false);
 
@@ -27,7 +29,7 @@ const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-            <div className="container flex h-16 items-center justify-between px-4">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 {/* Logo */}
                 <div className="flex items-center gap-2">
                     <Link href="/" className="text-xl font-bold">
@@ -61,7 +63,7 @@ const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
                     >
                         Contact
                     </Link>
-                    {visibleLogin && (
+                    {!session && (
                         <Link href="/auth/login">
                             <Button variant="outline">Login</Button>
                         </Link>
