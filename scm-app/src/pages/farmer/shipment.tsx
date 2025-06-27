@@ -40,9 +40,6 @@ const FarmerShipmentPage = () => {
                         <h1 className="text-2xl font-bold mb-4">
                             List of Shipment
                         </h1>
-                        <Button onClick={() => setOpenCreateDialog(true)}>
-                            Add Shipment
-                        </Button>
                     </div>
 
                     {openCreateDialog && (
