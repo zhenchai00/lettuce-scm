@@ -1,6 +1,8 @@
+version: '3.7'
+
 networks:
   lettuce-scm-network:
-  
+    
 volumes:
   couchdb-data-admin:
   couchdb-data-farmer:
@@ -10,79 +12,40 @@ volumes:
 services:
   # ------------------ Orderer -------------------
   orderer.example.com:
-    image: hyperledger/fabric-orderer:2.2.0
+    image: hyperledger/fabric-orderer:latest
     container_name: orderer.example.com
     environment:
       - ORDERER_GENERAL_LOGLEVEL=DEBUG
       - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
-      - ORDERER_GENERAL_GENESISMETHOD=file
-      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
       - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
       - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
-      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:9443 # admin listen address is usually for operations, optional for simple setup
-      - ORDERER_ADMIN_TLS_ENABLED=false
-      # - ORDERER_ADMIN_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
-      # - ORDERER_ADMIN_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      # - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
-      - ORDERER_GENERAL_TLS_ENABLED=false
-      # - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
-      # - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
-      # - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:9443
+
+      # --- TLS Settings: RE-ENABLE TLS for Orderer Cluster & External Comm ---
+      # TLS is REQUIRED for Raft clustering and generally good practice.
+      - ORDERER_GENERAL_TLS_ENABLED=true # <--- Set to true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_TLS_ENABLED=true # <--- Set to true for admin channel too
+      - ORDERER_ADMIN_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_ADMIN_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # -----------------------------------------------------------------------
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: orderer
     ports:
       - "7050:7050"
-      - "9443:9443" # admin port
+      - "9443:9443"
     volumes:
-      - ./system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
       - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-      # - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
+      # --- Mount TLS certificates for the orderer ---
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/var/hyperledger/orderer/tls
     networks:
       - lettuce-scm-network
     profiles: [all-nodes]
 
   # ------------------ AdminOrg Peer & CouchDB -------------------
-  peer0.admin.example.com:
-    image: hyperledger/fabric-peer:2.2.0
-    container_name: peer0.admin.example.com
-    depends_on:
-      couchdb-admin:
-        condition: service_healthy
-    environment:
-      - CORE_PEER_ID=peer0.admin.example.com
-      - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.admin.example.com:8052
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.admin.example.com:8051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.admin.example.com:8051
-      - CORE_PEER_GOSSIP_USELEADERELECTION=true
-      - CORE_PEER_GOSSIP_ORGLEADER=false
-      - CORE_PEER_COMMITTEE_ENABLED=true
-      - CORE_PEER_LOCALMSPID=AdminMSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
-      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-admin:5984
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_PEER_TLS_ENABLED=false
-      # - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
-      # - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
-      # - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt
-      - FABRIC_LOGGING_SPEC=DEBUG
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
-    command: peer node start
-    ports:
-      - "8051:8051" # peer listen address
-      - "8052:8052" # chaincode listen address - internal container communication
-    volumes:
-      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/etc/hyperledger/peer/tls
-      # - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/orderer/tls
-    networks:
-      - lettuce-scm-network
-    profiles: [all-nodes]
-
   couchdb-admin:
     image: hyperledger/fabric-couchdb:latest
     container_name: couchdb-admin
@@ -102,45 +65,56 @@ services:
       timeout: 5s
       retries: 20
 
-  # ------------------ FarmerOrg Peer -------------------
-  peer0.farmer.example.com:
-    image: hyperledger/fabric-peer:2.2.0
-    container_name: peer0.farmer.example.com
+  peer0.admin.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.admin.example.com
     depends_on:
-      couchdb-farmer:
+      couchdb-admin:
         condition: service_healthy
     environment:
-      - CORE_PEER_ID=peer0.farmer.example.com
-      - CORE_PEER_ADDRESS=peer0.farmer.example.com:9051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.farmer.example.com:9052
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.farmer.example.com:9051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.farmer.example.com:9051
-      - CORE_PEER_LOCALMSPID=FarmerMSP
+      - CORE_PEER_ID=peer0.admin.example.com
+      - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.admin.example.com:8052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
+      # Gossip communication for peers
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.admin.example.com:8051 # For single peer per org, this is fine
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.admin.example.com:8051
+      - CORE_PEER_LOCALMSPID=AdminMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
       - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-farmer:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-admin:5984
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_PEER_TLS_ENABLED=false
-      # - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
-      # - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
-      # - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt
-      # - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt
+
+      # --- TLS Settings for Peer ---
+      # Peers still need TLS enabled if they are communicating with TLS-enabled orderers or other peers
+      - CORE_PEER_TLS_ENABLED=true # <--- Set to true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt # Peer's own TLS CA
+      # Crucial: Peer needs to trust the Orderer's TLS CA to communicate with it
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_COMMITTER_ENABLED=true # Default, but good to be explicit
+      # Path to the orderer's TLS CA cert needed by the peer to connect to orderer
+      - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt # <--- New environment variable
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
-      - "9051:9051"
-      - "9052:9052"
+      - "8051:8051"
+      - "8052:8052"
     volumes:
-      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/etc/hyperledger/peer/tls
-      # - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/orderer/tls
+      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/msp:/etc/hyperledger/peer/msp
+      # --- Mount TLS certificates for the peer ---
+      - ./crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls:/etc/hyperledger/peer/tls
+      # --- Mount Orderer's TLS CA cert for the peer to trust it ---
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/orderer/tls/ca.crt # <--- New volume mount
     networks:
       - lettuce-scm-network
     profiles: [all-nodes]
 
+  # ------------------ FarmerOrg Peer & CouchDB (repeat TLS changes) -------------------
   couchdb-farmer:
     image: hyperledger/fabric-couchdb:latest
     container_name: couchdb-farmer
@@ -160,45 +134,45 @@ services:
       timeout: 5s
       retries: 20
 
-  # ------------------ DistributorOrg Peer -------------------
-  peer0.distributor.example.com:
-    image: hyperledger/fabric-peer:2.2.0
-    container_name: peer0.distributor.example.com
+  peer0.farmer.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.farmer.example.com
     depends_on:
-      couchdb-distributor:
+      couchdb-farmer:
         condition: service_healthy
     environment:
-      - CORE_PEER_ID=peer0.distributor.example.com
-      - CORE_PEER_ADDRESS=peer0.distributor.example.com:10051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:10051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.distributor.example.com:10052
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.distributor.example.com:10051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.distributor.example.com:10051
-      - CORE_PEER_LOCALMSPID=DistributorMSP
+      - CORE_PEER_ID=peer0.farmer.example.com
+      - CORE_PEER_ADDRESS=peer0.farmer.example.com:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.farmer.example.com:9052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.farmer.example.com:9051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.farmer.example.com:9051
+      - CORE_PEER_LOCALMSPID=FarmerMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
       - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-distributor:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-farmer:5984
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_PEER_TLS_ENABLED=false
-      # - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
-      # - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
-      # - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt
-      # - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt
+      - CORE_PEER_TLS_ENABLED=true # <--- Set to true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt
+      - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt # <--- New environment variable
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
-      - "10051:10051"
-      - "10052:10052"
+      - "9051:9051"
+      - "9052:9052"
     volumes:
-      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/peer/tls
-      # - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/orderer/tls
+      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/farmer.example.com/peers/peer0.farmer.example.com/tls:/etc/hyperledger/peer/tls
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/orderer/tls/ca.crt
     networks:
       - lettuce-scm-network
     profiles: [all-nodes]
 
+  # ------------------ DistributorOrg Peer & CouchDB (repeat TLS changes) -------------------
   couchdb-distributor:
     image: hyperledger/fabric-couchdb:latest
     container_name: couchdb-distributor
@@ -218,45 +192,45 @@ services:
       timeout: 5s
       retries: 20
 
-  # ------------------ RetailerOrg Peer -------------------
-  peer0.retailer.example.com:
-    image: hyperledger/fabric-peer:2.2.0
-    container_name: peer0.retailer.example.com
+  peer0.distributor.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.distributor.example.com
     depends_on:
-      couchdb-retailer:
+      couchdb-distributor:
         condition: service_healthy
     environment:
-      - CORE_PEER_ID=peer0.retailer.example.com
-      - CORE_PEER_ADDRESS=peer0.retailer.example.com:11051
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:11051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.retailer.example.com:11052
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:11052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.retailer.example.com:11051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.retailer.example.com:11051
-      - CORE_PEER_LOCALMSPID=RetailerMSP
+      - CORE_PEER_ID=peer0.distributor.example.com
+      - CORE_PEER_ADDRESS=peer0.distributor.example.com:10051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:10051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.distributor.example.com:10052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.distributor.example.com:10051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.distributor.example.com:10051
+      - CORE_PEER_LOCALMSPID=DistributorMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
       - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
-      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-retailer:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-distributor:5984
       - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
       - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
-      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_ENABLED=true # <--- Set to true
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt
-      - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt
+      - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt # <--- New environment variable
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: peer node start
     ports:
-      - "11051:11051"
-      - "11052:11052"
+      - "10051:10051"
+      - "10052:10052"
     volumes:
-      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
-      # - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/etc/hyperledger/peer/tls
-      # - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls:/etc/hyperledger/orderer/tls
+      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/distributor.example.com/peers/peer0.distributor.example.com/tls:/etc/hyperledger/peer/tls
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/orderer/tls/ca.crt
     networks:
       - lettuce-scm-network
     profiles: [all-nodes]
 
+  # ------------------ RetailerOrg Peer & CouchDB (repeat TLS changes) -------------------
   couchdb-retailer:
     image: hyperledger/fabric-couchdb:latest
     container_name: couchdb-retailer
@@ -276,8 +250,46 @@ services:
       timeout: 5s
       retries: 20
   
+  peer0.retailer.example.com:
+    image: hyperledger/fabric-peer:latest
+    container_name: peer0.retailer.example.com
+    depends_on:
+      couchdb-retailer:
+        condition: service_healthy
+    environment:
+      - CORE_PEER_ID=peer0.retailer.example.com
+      - CORE_PEER_ADDRESS=peer0.retailer.example.com:11051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:11051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.retailer.example.com:11052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:11052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.retailer.example.com:11051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.retailer.example.com:11051
+      - CORE_PEER_LOCALMSPID=RetailerMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-retailer:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+      - CORE_PEER_TLS_ENABLED=true # <--- Set to true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/peer/tls/ca.crt
+      - ORDERER_CA=/etc/hyperledger/orderer/tls/ca.crt # <--- New environment variable
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - "11051:11051"
+      - "11052:11052"
+    volumes:
+      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/msp:/etc/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/retailer.example.com/peers/peer0.retailer.example.com/tls:/etc/hyperledger/peer/tls
+      - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt:/etc/hyperledger/orderer/tls/ca.crt
+    networks:
+      - lettuce-scm-network
+    profiles: [all-nodes]
+    
   cli:
-    image: hyperledger/fabric-tools:2.2.0
+    image: hyperledger/fabric-tools:latest
     container_name: cli
     tty: true
     stdin_open: true
@@ -288,20 +300,21 @@ services:
       - peer0.distributor.example.com
       - peer0.retailer.example.com
     environment:
-      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
+      - FABRIC_CFG_PATH=/etc/hyperledger/config
       - CORE_PEER_LOCALMSPID=AdminMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/crypto-config/peerOrganizations/admin.example.com/users/Admin@admin.example.com/msp
       - CORE_PEER_ADDRESS=peer0.admin.example.com:8051
-      - CORE_PEER_TLS_ENABLED=false
-      # - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls/ca.crt
-      # - ORDERER_CA=/etc/hyperledger/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+      # --- TLS Settings for CLI ---
+      - CORE_PEER_TLS_ENABLED=true # <--- Set to true for CLI to communicate with TLS-enabled peers/orderers
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/crypto-config/peerOrganizations/admin.example.com/peers/peer0.admin.example.com/tls/ca.crt # CLI needs peer's TLS CA
+      # CLI needs to trust orderer's TLS CA to send transactions
+      - ORDERER_CA=/etc/hyperledger/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt # <--- Correct path for CLI
       - ORDERER_ADDRESS=orderer.example.com:7050
-      - FABRIC_LOGGING_SPEC=DEBUG
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric # chaincode will be here
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
     command: /bin/bash
     volumes:
-      - ./config:/etc/hyperledger/fabric
-      - ./crypto-config:/etc/hyperledger/crypto-config
+      - ./configtx.yaml:/etc/hyperledger/config/configtx.yaml
+      - ./crypto-config:/etc/hyperledger/crypto-config # Mount entire crypto-config folder
       - ./channel-artifacts:/etc/hyperledger/channel-artifacts
       - ./chaincode:/opt/gopath/src/github.com/hyperledger/fabric/chaincode
     networks:

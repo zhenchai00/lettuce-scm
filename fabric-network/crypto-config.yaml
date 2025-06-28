@@ -7,6 +7,7 @@ OrdererOrgs:
 PeerOrgs:
   - Name: AdminOrg
     Domain: admin.example.com
+    EnableNodeOUs: true
     Template:
       Count: 1        # one peer: peer0.admin.example.com
     Users:
@@ -14,6 +15,7 @@ PeerOrgs:
 
   - Name: FarmerOrg
     Domain: farmer.example.com
+    EnableNodeOUs: true
     Template:
       Count: 1        # one peer: peer0.farmer.example.com
     Users:
@@ -21,6 +23,7 @@ PeerOrgs:
 
   - Name: DistributorOrg
     Domain: distributor.example.com
+    EnableNodeOUs: true
     Template:
       Count: 1        # one peer: peer0.distributor.example.com
     Users:
@@ -28,6 +31,7 @@ PeerOrgs:
 
   - Name: RetailerOrg
     Domain: retailer.example.com
+    EnableNodeOUs: true
     Template:
       Count: 1        # one peer: peer0.retailer.example.com
     Users:

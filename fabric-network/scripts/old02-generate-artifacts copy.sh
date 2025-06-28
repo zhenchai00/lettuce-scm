@@ -39,6 +39,7 @@ configtxgen \
   -profile "$CHANNEL_PROFILE" \
   -channelID "$CHANNEL_NAME" \
   -outputCreateChannelTx "$ARTIFACTS/$CHANNEL_NAME.tx" \
+  -configPath "$CONFIG_DIR"
 echo "✔ Created: $ARTIFACTS/$CHANNEL_NAME.tx"
 echo ""
 
@@ -57,6 +58,7 @@ for ORG in "${ORGS[@]}"; do
     -channelID "$CHANNEL_NAME" \
     -asOrg "${ORG}Org" \
     -outputAnchorPeersUpdate "$ANCHOR_TX" \
+    -configPath "$CONFIG_DIR"
   echo "✔ Created: $ANCHOR_TX"
   echo ""
 done
