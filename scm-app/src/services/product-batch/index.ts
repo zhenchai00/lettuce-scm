@@ -28,6 +28,21 @@ export const getProductBatchById = async (id: string) => {
     return productBatch || [];
 };
 
+export const getProductBatchesByUserId = async (userId: string) => {
+    console.log("Fetching product batches for user ID:", userId);
+    const productBatches = await prisma.batchProduct.findMany({
+        where: { farmerId: userId },
+        include: {
+            farmer: true,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+    console.log("Fetched product batches for user:", productBatches);
+    return productBatches || [];
+};
+
 export const getProductBatchByBlockchainTx = async (blockchainTx: string) => {
     console.log(
         "Fetching product batch with blockchain transaction:",

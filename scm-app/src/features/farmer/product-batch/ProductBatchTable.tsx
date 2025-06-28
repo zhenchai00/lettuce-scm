@@ -28,16 +28,17 @@ import { Badge } from "@/components/ui/badge";
 interface ProductBatchTableProps {
     data: ProductBatchRow[];
     onUpdate: () => void;
+    queryKey: string[];
 }
 
-const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
+const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate, queryKey }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => deleteProductBatch(id),
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ["farmer", "product-batches"],
+                queryKey,
             });
             toast.success("Product batch deleted successfully.");
         },
@@ -72,12 +73,18 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                             <TableCell>{productBatch.description}</TableCell>
                             <TableCell className="text-center">
                                 {
-                                    productBatch.harvestDate ? (
-                                        format(new Date(productBatch.plantingDate), "yyyy-MM-dd")
-                                    ) : (
+                                    productBatch.plantingDate ? (
+                                        productBatch.harvestDate ? (
+                                            <span>
+                                                {format(new Date(productBatch.plantingDate), "yyyy-MM-dd")}
+                                            </span>
+                                        ) : (
                                         <Badge className="bg-yellow-500 text-white">
                                             {format(new Date(productBatch.plantingDate), "yyyy-MM-dd")}
                                         </Badge>
+                                        )
+                                    ) : (
+                                        "N/A"
                                     )
                                 }
                             </TableCell>
@@ -151,7 +158,7 @@ const ProductBatchTable: FC<ProductBatchTableProps> = ({ data, onUpdate }) => {
                     onSuccess={() => {
                         setEditingId(null);
                         queryClient.invalidateQueries({
-                            queryKey: ["farmer", "product-batches"],
+                            queryKey,
                         });
                     }}
                     onCancel={() => setEditingId(null)}

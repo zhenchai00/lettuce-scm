@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth/role-guard";
-import { createProductBatch, deleteProductBatch, getAvailableProductBatches, getProductBatchByBlockchainTx, getProductBatchById, getProductBatches, updateProductBatch } from "@/services/product-batch";
+import { createProductBatch, deleteProductBatch, getAvailableProductBatches, getProductBatchByBlockchainTx, getProductBatchById, getProductBatches, getProductBatchesByUserId, updateProductBatch } from "@/services/product-batch";
 import { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
@@ -18,6 +18,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
                         return res.status(400).json({ error: "Bad Request", message: "ID cannot be undefined or null" });
                     }
                     const user = await getProductBatchById(id as string);
+                    return res.status(200).json(user);
+                }
+                if (req.query.userId) {
+                    const { userId } = req.query;
+                    if (userId === "undefined" || userId === "null") {
+                        return res.status(400).json({ error: "Bad Request", message: "User ID cannot be undefined or null" });
+                    }
+                    const user = await getProductBatchesByUserId(userId as string);
                     return res.status(200).json(user);
                 }
                 if (req.query.blockchainTx) {

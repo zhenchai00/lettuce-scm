@@ -13,6 +13,13 @@ export const getProductBatchById = async (id: string) => {
     return response.data;
 };
 
+export const getProductBatchByUserId = async (userId: string) => {
+    const response = await apiClient.get(
+        `/api/farmer/product-batches?userId=${userId}`
+    );
+    return response.data;
+};
+
 export const createProductBatch = async (data: CreateProductBatchData) => {
     const response = await apiClient.post("/api/farmer/product-batches", data);
     return response.data;

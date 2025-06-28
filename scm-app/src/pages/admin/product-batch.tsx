@@ -3,20 +3,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import CreateProductBatchForm from "@/features/farmer/product-batch/CreateProductBatchForm";
 import ProductBatchTable from "@/features/farmer/product-batch/ProductBatchTable";
-import { getProductBatchByUserId } from "@/features/farmer/product-batch/query";
+import { getProductBatches } from "@/features/farmer/product-batch/query";
 import { ProductBatchRow } from "@/features/farmer/product-batch/type";
 import WithRolePage from "@/lib/auth/with-role-page";
 import { queryClient } from "@/lib/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
 
-const FarmerProductBatchPage = () => {
-    const { data: session } = useSession();
-    const userId = session?.user?.id || "";
-    const BATCH_KEY = ["farmer", "product-batches", userId];
-    const [openCreateProductBatchDialog, setOpenCreateProductBatchDialog] = useState(false);
+const AdminProductBatchPage = () => {
+    const BATCH_KEY = ["admin", "product-batches"];
+    const [openCreateProductBatchDialog, setOpenCreateProductBatchDialog] =
+        useState(false);
 
     const {
         data: productBatches = [],
@@ -24,7 +22,7 @@ const FarmerProductBatchPage = () => {
         isError,
     } = useQuery<ProductBatchRow[]>({
         queryKey: BATCH_KEY,
-        queryFn: () => getProductBatchByUserId(userId),
+        queryFn: getProductBatches,
     });
 
     const handleCreated = () => {
@@ -33,7 +31,7 @@ const FarmerProductBatchPage = () => {
         });
         setOpenCreateProductBatchDialog(false);
     };
-    const allowedRoles = useMemo(() => ["FARMER"], []);
+    const allowedRoles = useMemo(() => ["ADMIN"], []);
     return (
         <WithRolePage allowedRoles={allowedRoles}>
             <UserLayout title="Product Batch Management">
@@ -100,4 +98,4 @@ const FarmerProductBatchPage = () => {
         </WithRolePage>
     );
 };
-export default FarmerProductBatchPage;
+export default AdminProductBatchPage;

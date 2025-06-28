@@ -72,21 +72,24 @@ type FormData = z.infer<typeof FormSchema>;
 interface CreateProductBatchFormProps {
     onSuccess: () => void;
     onCancel: () => void;
+    queryKey: string[];
 }
 
 const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
     onSuccess,
     onCancel,
+    queryKey,
 }) => {
     const { data: session } = useSession();
     const userRole = session?.user?.role;
+    const farmerListQueryKey = queryKey.concat(["farmerlist"]);
 
     const {
         data: farmers = [],
         isLoading: isFarmersLoading,
         isError: isFarmersError,
     } = useQuery<FarmerDetails[]>({
-        queryKey: ["farmer", "users"],
+        queryKey: farmerListQueryKey,
         queryFn: getFarmerList,
         enabled: userRole === "ADMIN",
     })
@@ -111,7 +114,7 @@ const CreateProductBatchForm: FC<CreateProductBatchFormProps> = ({
         mutationFn: createProductBatch,
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ["farmer", "product-batches"],
+                queryKey,
             });
             form.reset();
             onSuccess();
