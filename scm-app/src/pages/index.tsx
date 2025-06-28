@@ -2,12 +2,15 @@ import PublicNav from "@/components/nav/PublicNav";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import ProductJourney from "@/features/common/ProductJourney";
+import ProductJourney from "@/features/public/ProductJourney";
 import { getLettuceTrackingInfo } from "@/features/public/query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
+import { Loader } from "lucide-react";
+import Head from "next/head";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 export default function Home() {
@@ -37,6 +40,10 @@ export default function Home() {
     
     return (
         <div>
+            <Head>
+                <title>Lettuce Supply Chain</title>
+                <meta name="description" content="Track your lettuce supply chain" />
+            </Head>
             <PublicNav />
             <main className="container mx-auto p-4">
                 <h1 className="text-3xl font-bold mb-4">
@@ -87,8 +94,12 @@ export default function Home() {
                     </CardContent>
                 </Card>
 
-                {isLoading && <p className="text-center mt-4">Loading...</p>}
-                {isError && <p className="text-center mt-4 text-red-500">Error fetching tracking info</p>}
+                {isLoading && (
+                    <div className="flex items-center justify-center h-64">
+                        <Loader className="animate-spin h-8 w-8 text-gray-500" />
+                    </div>
+                )}
+                {isError && toast.error("Failed to load product journey. Please try again later.")}
                 {data && <ProductJourney data={data} />}
             </main>
         </div>
