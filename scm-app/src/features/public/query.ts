@@ -20,14 +20,8 @@ export const submitContactForm = async (data: ContactFormData) => {
 export const getLettuceTrackingInfo = async (trackingNumber: string) => {
     const url = `/api/tracking`;
     const params = { id: trackingNumber };
-    console.log("[getLettuceTrackingInfo] GET", url, "params:", params);
     try {
         const response = await apiClient.get(url, { params });
-        console.log(
-            "[getLettuceTrackingInfo] response status:",
-            response.status
-        );
-        console.log("[getLettuceTrackingInfo] response data:", response.data);
         return response.data; // ← don’t call `.json()` on response.data!
     } catch (err: any) {
         console.error(
@@ -39,3 +33,19 @@ export const getLettuceTrackingInfo = async (trackingNumber: string) => {
         throw err;
     }
 };
+
+export const getShopProducts = async () => {
+    const url = `/api/shop`;
+    try {
+        const response = await apiClient.get(url);
+        return response.data; // ← don’t call `.json()` on response.data!
+    } catch (err: any) {
+        console.error(
+            "[getShopProducts] ERROR status:",
+            err.response?.status,
+            "data:",
+            err.response?.data
+        );
+        throw err;
+    }
+}

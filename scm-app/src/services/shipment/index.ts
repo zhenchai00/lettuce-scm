@@ -224,6 +224,15 @@ export const updateShipment = async (id: string, data: any) => {
                 }
             });
             console.log("Updated shipment with tracking key - " + batch.id, batch);
+            const inventory = await prisma.inventory.update({
+                where: {
+                    id: newInventory.id,
+                },
+                data: {
+                    trackingKey: batch.trackingKey,
+                },
+            });
+            console.log("Updated inventory with tracking key - " + inventory.id, inventory );
         }
 
         // update product event
