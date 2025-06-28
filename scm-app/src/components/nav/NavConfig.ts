@@ -7,7 +7,7 @@ export const NAVI_CONFIG: Record<
 > = {
     ADMIN: [
         { href: "/admin/dashboard", label: "Dashboard", icon: Home },
-        { href: "/farmer/product-batch", label: "Product Batches", icon: Package },
+        { href: "/admin/product-batch", label: "Product Batches", icon: Package },
         { href: "/admin/inventory", label: "Inventory", icon: PackageSearch },
         { href: "/admin/shipment", label: "Shipment", icon: Truck },
         { href: "/admin/users", label: "Users", icon: User },

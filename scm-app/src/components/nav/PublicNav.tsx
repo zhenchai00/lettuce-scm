@@ -24,6 +24,7 @@ const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
     const mobileLinks = [
         { name: "Home", href: "/" },
         { name: "About", href: "/about" },
+        { name: "Shop", href: "/shop" },
         { name: "Contact", href: "/contact" },
     ];
 
@@ -56,6 +57,14 @@ const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
                         About
                     </Link>
                     <Link
+                        href="/shop"
+                        className={
+                            isActive("/shop") ? "underline" : "text-gray-600"
+                        }
+                    >
+                        Shop
+                    </Link>
+                    <Link
                         href="/contact"
                         className={
                             isActive("/contact") ? "underline" : "text-gray-600"
@@ -63,7 +72,11 @@ const PublicNav = ({ visibleLogin = true }: PublicNavProps) => {
                     >
                         Contact
                     </Link>
-                    {!session && (
+                    {session ? (
+                        <Link href={`/${session.user.role.toLowerCase()}/dashboard`}>
+                            <Button variant="default">Dashboard</Button>
+                        </Link>
+                    ) : (
                         <Link href="/auth/login">
                             <Button variant="outline">Login</Button>
                         </Link>
