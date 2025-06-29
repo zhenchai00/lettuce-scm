@@ -101,9 +101,8 @@ export class AssetTransferContract extends Contract {
         ctx: Context,
         eventDetails: string,
     ): Promise<void> {
+        console.info('============= START : CreateAsset ===========');
         const asset: Partial<Asset> = JSON.parse(eventDetails) as Asset;
-
-        const productEventId = asset.id || randomUUID().toString();
 
         if (!asset.eventType || !asset.batchId || !asset.userId) {
             throw new Error('Event type, batch ID, and user ID are required');
@@ -111,28 +110,41 @@ export class AssetTransferContract extends Contract {
         if (!Object.values(EventType).includes(asset.eventType)) {
             throw new Error(`Invalid event type: ${asset.eventType}`);
         }
+        if ((asset.eventType === EventType.SHIPPED || asset.eventType === EventType.DELIVERED) && !asset.shipmentId) {
+            throw new Error(`Shipment ID is required for ${asset.eventType} events.`);
+        }
+        if ((asset.eventType === EventType.PLANTED || asset.eventType === EventType.HARVESTED) && asset.shipmentId) {
+            console.warn(`Shipment ID provided for ${asset.eventType} event. It will be ignored.`);
+            asset.shipmentId = undefined; // Or set to an empty string
+        }
 
+        const productEventId = asset.id || randomUUID().toString();
         const exists = await this.AssetExists(ctx, productEventId);
         if (exists) {
             throw new Error(`The asset ${productEventId} already exists`);
         }
 
-        const timestamp = new Date((await ctx.stub.getTxTimestamp()).seconds * 1000 + (await ctx.stub.getTxTimestamp()).nanos / 1000000).toISOString();
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        const timestampMs = (txTimestamp.seconds.toNumber() * 1000) + (txTimestamp.nanos / 1000000);
+        const timestampISO = new Date(timestampMs).toISOString();
         const txHash = ctx.stub.getTxID();
 
         const newProductEvent: Asset = {
             id: productEventId,
+            docType: 'productEvent',
             eventType: asset.eventType,
-            timestamp: timestamp,
+            timestamp: timestampISO,
             txHash: txHash,
             quantity: asset.quantity,
             description: asset.description,
             batchId: asset.batchId,
-            shipmentId: asset.shipmentId as string,
+            shipmentId: asset.shipmentId || '',
             userId: asset.userId,
         };
 
         await ctx.stub.putState(productEventId, Buffer.from(JSON.stringify(sortKeysRecursive(newProductEvent))));
+        console.info(`Asset ${productEventId} created successfully`);
+        console.info('============= END : CreateAsset ===========');
     }
 
     // ReadAsset returns the asset stored in the world state with given id.
@@ -144,6 +156,39 @@ export class AssetTransferContract extends Contract {
         }
         return assetJSON.toString();
     }
+
+    @Transaction(false)
+    @Returns('string')
+    public async GetProductJourney(
+        ctx: Context,
+        batchId: string,
+        shipmentId?: string
+    ): Promise<string> {
+        let queryString = {
+            selector: {
+                docType: 'productEvent',
+                batchId: batchId,
+            } as Record<string, unknown>,
+            sort: [{ timestamp: 'asc' }],
+        };
+        if (shipmentId && shipmentId !== '') {
+            queryString.selector['shipmentId'] = shipmentId;
+        }
+
+        console.info(`Executing rich query: ${JSON.stringify(queryString)}`);
+        const queryResults = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+        const results: Asset[] = [];
+
+        let current = await queryResults.next();
+        while (!current.done) {
+            if (current.value && current.value.value) {
+                const asset = JSON.parse(current.value.value.toString()) as Asset;
+                results.push(asset);
+            }
+            current = await queryResults.next();
+        }
+        return stringify(sortKeysRecursive(results));
+    };
 
     // UpdateAsset updates an existing asset in the world state with provided parameters.
     @Transaction()
@@ -166,11 +211,15 @@ export class AssetTransferContract extends Contract {
         const oldAssetBytes = await ctx.stub.getState(incomingAsset.id);
         const oldAsset: Asset = JSON.parse(oldAssetBytes.toString()) as Asset;
 
+        const txTimestamp = ctx.stub.getTxTimestamp();
+        const timestampMs = (txTimestamp.seconds.toNumber() * 1000) + (txTimestamp.nanos / 1000000);
+        const timestampISO = new Date(timestampMs).toISOString();
+
         const updatedAsset: Asset = {
             ...oldAsset,
             ...incomingAsset,
             id: oldAsset.id,
-            timestamp: new Date((await ctx.stub.getTxTimestamp()).seconds * 1000 + (await ctx.stub.getTxTimestamp()).nanos / 1000000).toISOString(),
+            timestamp: timestampISO,
             txHash: ctx.stub.getTxID(),
         };
 
