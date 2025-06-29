@@ -105,6 +105,22 @@ export const createProductBatch = async (data: CreateProductBatchData) => {
     });
     console.log("Created product event - " + productEvent.id, productEvent);
 
+    const createAssetDetails = {
+        id: productEvent.id,
+        eventType: "PLANTED",
+        timestamp: new Date().toISOString(),
+        quantity: data.quantity || 0,
+        description: `${productBatch.farmer?.name} planted product batch for ${productBatch.produceType}`,
+        batchId: productBatch.id,
+        userId: data.farmer,
+    };
+    const fabricService = await getFabricService();
+    const createAssetResult = await fabricService.submitTransaction(
+        "CreateAsset",
+        JSON.stringify(createAssetDetails)
+    );
+    console.log("Created asset on blockchain:", createAssetResult);
+
     return productBatch;
 };
 
