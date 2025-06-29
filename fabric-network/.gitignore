@@ -1,40 +1,34 @@
-# General editor and OS files
+# Emacs backup files
 *~
 *#
 .#*
+# Vim file artifacts
+.*.sw*
 .DS_Store
 .project
-.vscode/
-.gradle/
-.idea/
-.classpath
-.settings/
-
+# omit Go vendor directories
+vendor/
+.vscode
+.gradle
+.idea
 # Dependency directories
 node_modules/
 package-lock.json
-pnpm-lock.yaml
+# Ignore Gradle build output directory
+build
+# Ignore Maven build output directory
+target
 
-# Fabric binaries and dynamic/generated files
-external-chaincode/
-bin/
+# Eclipse
+.classpath
+.settings
+
+# installed Fabric binaries etc.
+/bin/
 builders/
-crypto-config/
-ca-server/*/msp/
-ca-server/*/fabric-ca-server.db/
-channel-artifacts/
+config/
+external-chaincode/
+install-fabric.sh
 
-# Include specific configuration files
-!ca-server/orderer/fabric-ca-server-config.yaml
-!ca-server/admin/fabric-ca-server-config.yaml
-!ca-server/farmer/fabric-ca-server-config.yaml
-!ca-server/distributor/fabric-ca-server-config.yaml
-!ca-server/retailer/fabric-ca-server-config.yaml
-
-# Omit temporary/generated artifacts
-*.tar.gz
-
-# Ignore logs and tmp
-*.log
-tmp/
-logs/
+# override the ignore of all config/ folders
+!full-stack-asset-transfer-guide/infrastructure/sample-network/config
