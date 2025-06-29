@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { FC, JSX } from "react";
 
@@ -49,6 +48,19 @@ const badgeVariants: Record<string, JSX.Element> = {
 };
 
 const ProductJourney: FC<ProductJourneyProps> = ({ data }) => {
+    if (!data || !data.events || data.events.length === 0) {
+        return (
+            <Card className="w-full mt-6">
+                <CardHeader>
+                    <h3 className="text-xl font-semibold">Product Journey</h3>
+                    <p className="text-sm text-gray-500">
+                        No journey data available for this tracking number.
+                    </p>
+                </CardHeader>
+            </Card>
+        );
+    }
+
     return (
         <Card className="w-full mt-6">
             <CardHeader>
@@ -61,29 +73,42 @@ const ProductJourney: FC<ProductJourneyProps> = ({ data }) => {
                 </p>
             </CardHeader>
             <CardContent className="space-y-4">
-                {data.events.map((event, idx) => (
-                    <div key={idx} className="flex items-start space-x-4">
-                        <div className="flex-shrink-0 w-30">
-                            {badgeVariants[event.eventType] ?? (
-                                <Badge variant="outline" className="bg-gray-100 text-gray-800">
-                                    {event.eventType}
-                                </Badge>
-                            )}
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-xs text-gray-400">
-                                {format(
-                                    new Date(event.timestamp),
-                                    "yyyy-MM-dd HH:mm:ss"
-                                )}
-                            </p>
-                            <p className="mt-1 text-sm">{event.description}</p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                By {event.user.name} ({event.user.email})
-                            </p>
-                        </div>
+                {data && (
+                    <div className="space-y-2">
+                        {data.events.map((event, index) => (
+                            <div
+                                key={index}
+                                className="flex items-start space-x-4 mb-2 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="flex-shrink-0 w-30">
+                                    {badgeVariants[event.eventType] || (
+                                        <Badge
+                                            variant="outline"
+                                            className="bg-gray-100 text-gray-800"
+                                        >
+                                            UNKNOWN
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium">
+                                        {event.description}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        {format(
+                                            new Date(event.timestamp),
+                                            "PPPpp"
+                                        )}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        by {event.user.name} ({event.user.email}
+                                        )
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                )}
             </CardContent>
         </Card>
     );

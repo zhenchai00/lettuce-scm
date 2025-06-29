@@ -1,6 +1,13 @@
 import PublicNav from "@/components/nav/PublicNav";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import ProductJourney from "@/features/public/ProductJourney";
 import { getLettuceTrackingInfo } from "@/features/public/query";
@@ -10,7 +17,6 @@ import { Loader } from "lucide-react";
 import Head from "next/head";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 export default function Home() {
@@ -35,14 +41,17 @@ export default function Home() {
 
     const onSubmit = (data: TrackingForm) => {
         setSubmitted(data.trackingNumber);
-        console.log("Tracking number submitted:", data.trackingNumber);
+        form.reset();
     };
-    
+
     return (
         <div>
             <Head>
                 <title>Lettuce Supply Chain</title>
-                <meta name="description" content="Track your lettuce supply chain" />
+                <meta
+                    name="description"
+                    content="Track your lettuce supply chain"
+                />
             </Head>
             <PublicNav />
             <main className="container mx-auto p-4">
@@ -60,7 +69,8 @@ export default function Home() {
                             Track Your Lettuce
                         </h2>
                         <p className="text-sm text-gray-500">
-                            Enter the tracking number to view the status of your lettuce.
+                            Enter the tracking number to view the status of your
+                            lettuce.
                         </p>
                     </CardHeader>
                     <CardContent>
@@ -74,7 +84,9 @@ export default function Home() {
                                     name="trackingNumber"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Tracking Number</FormLabel>
+                                            <FormLabel>
+                                                Tracking Number
+                                            </FormLabel>
                                             <FormControl>
                                                 <Input
                                                     {...field}
@@ -88,7 +100,9 @@ export default function Home() {
                                 <button
                                     type="submit"
                                     className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
-                                >Let's See The Product Journey</button>
+                                >
+                                    Let's See The Product Journey
+                                </button>
                             </form>
                         </Form>
                     </CardContent>
@@ -99,8 +113,9 @@ export default function Home() {
                         <Loader className="animate-spin h-8 w-8 text-gray-500" />
                     </div>
                 )}
-                {isError && toast.error("Failed to load product journey. Please try again later.")}
-                {data && <ProductJourney data={data} />}
+                {data && (
+                    <ProductJourney data={data} />
+                )}
             </main>
         </div>
     );
