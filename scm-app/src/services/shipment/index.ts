@@ -1,3 +1,4 @@
+import { getFabricService } from "@/lib/fabric";
 import prisma from "@/lib/prisma";
 
 export const getShipment = async () => {
@@ -113,143 +114,186 @@ export const updateShipment = async (id: string, data: any) => {
             console.warn("Unknown status:", data.status);
             break;
     }
-    const shipment = await prisma.shipment.update({
-        where: { id },
-        data: {
-            ...data,
-            updatedAt: new Date(),
-        },
-        include: {
-            batch: true,
-            fromUser: true,
-            toUser: true,
-        },
-    });
-    console.log("Updated shipment - " + shipment.id, shipment);
 
-    // update sender inventory if the status is OUTOFDELIVERY
-    if (data.status === "OUTOFDELIVERY") {
-        const currentInventory = await prisma.inventory.findUnique({
-            where: {
-                unique_inventory: {
-                    batchId: shipment.batchId,
-                    userId: shipment.fromUserId,
-                },
-            },
-        });
-        if (!currentInventory) {
-            console.warn("No inventory found for shipment:", shipment);
-            return shipment;
-        }
-        const newInventory = await prisma.inventory.update({
-            data: {
-                // Decrease the quantity in sender's inventory
-                quantity: currentInventory.quantity - (shipment.quantity || 0),
-                updatedAt: new Date(),
-            },
-            where: {
-                unique_inventory: {
-                    batchId: shipment.batchId,
-                    userId: shipment.fromUserId,
-                },
-            },
-            include: {
-                batch: true,
-                user: true,
-            },
-        });
-        console.log("Updated inventory - " + newInventory.id, newInventory);
-
-        // update product event 
-        const productEvent = await prisma.productEvent.create({
-            data: {
-                batchId: shipment.batchId,
-                userId: shipment.fromUserId,
-                shipmentId: shipment.id,
-                quantity: (shipment.quantity || 0),
-                eventType: "SHIPPED",
-                description: `Shipment ${shipment.id} shipped from ${shipment.fromUser?.name} to ${shipment.toUser?.name}`,
-                timestamp: new Date(),
-            },
-        });
-        console.log("Created product event - " + productEvent.id, productEvent);
-    }
-
-    // update receiver inventory if the status is DELIVERED
-    if (data.status === "DELIVERED") {
-        const currentInventory = await prisma.inventory.findUnique({
-            where: {
-                unique_inventory: {
-                    batchId: shipment.batchId,
-                    userId: shipment.toUserId,
-                },
-            },
-            include: {
-                batch: true,
-                user: true,
-            }
-        });
-        const newInventory = await prisma.inventory.upsert({
-            create: {
-                batchId: shipment.batchId,
-                userId: shipment.toUserId,
-                quantity: shipment.quantity || 0,
-                updatedAt: new Date(),
-            },
-            update: {
-                quantity: currentInventory
-                    ? currentInventory.quantity + (shipment.quantity || 0)
-                    : shipment.quantity || 0,
-                updatedAt: new Date(),
-            },
-            where: {
-                unique_inventory: {
-                    batchId: shipment.batchId,
-                    userId: shipment.toUserId,
-                },
-            },
-            include: {
-                batch: true,
-                user: true,
-            }
-        });
-        console.log("Updated inventory:", newInventory);
-
-        if (newInventory.user.role === "RETAILER") {
-            const batch = await prisma.shipment.update({
+    try {
+        const shipment = await prisma.$transaction(async (tx) => {
+            const updatedShipment = await tx.shipment.update({
                 where: { id },
                 data: {
-                    // this is to let consumer know the shipment is delivered
-                    trackingKey: `${newInventory.userId}-${newInventory.id}-${newInventory.batchId}`,
-                }
-            });
-            console.log("Updated shipment with tracking key - " + batch.id, batch);
-            const inventory = await prisma.inventory.update({
-                where: {
-                    id: newInventory.id,
+                    ...data,
+                    updatedAt: new Date(),
                 },
-                data: {
-                    trackingKey: batch.trackingKey,
+                include: {
+                    batch: true,
+                    fromUser: true,
+                    toUser: true,
                 },
             });
-            console.log("Updated inventory with tracking key - " + inventory.id, inventory );
-        }
+            console.log("Updated shipment - " + updatedShipment.id, updatedShipment);
 
-        // update product event
-        const productEvent = await prisma.productEvent.create({
-            data: {
-                batchId: shipment.batchId,
-                shipmentId: shipment.id,
-                userId: shipment.toUserId,
-                quantity: shipment.quantity || 0,
-                eventType: "DELIVERED",
-                description: `Shipment ${shipment.id} received by to ${shipment.toUser?.name}`,
-                timestamp: new Date(),
-            },
+            // out of delivery 
+            if (data.status === "OUTOFDELIVERY") {
+                const currentInventory = await tx.inventory.findUnique({
+                    where: {
+                        unique_inventory: {
+                            batchId: updatedShipment.batchId,
+                            userId: updatedShipment.fromUserId,
+                        },
+                    },
+                });
+
+                if (!currentInventory) {
+                    throw new Error(
+                        `Inventory not found for sender: ${updatedShipment.fromUserId}, batch: ${updatedShipment.batchId}`
+                    );
+                }
+
+                const newInventory = await tx.inventory.update({
+                    data: {
+                        quantity: currentInventory.quantity - (updatedShipment.quantity || 0),
+                        updatedAt: new Date(),
+                    },
+                    where: {
+                        unique_inventory: {
+                            batchId: updatedShipment.batchId,
+                            userId: updatedShipment.fromUserId,
+                        },
+                    },
+                    include: {
+                        batch: true,
+                        user: true,
+                    },
+                });
+                console.log("Updated inventory - " + newInventory.id, newInventory);
+
+                const productEvent = await tx.productEvent.create({
+                    data: {
+                        batchId: updatedShipment.batchId,
+                        userId: updatedShipment.fromUserId,
+                        shipmentId: updatedShipment.id,
+                        quantity: updatedShipment.quantity || 0,
+                        eventType: "SHIPPED",
+                        description: `Shipment ${updatedShipment.id} shipped from ${updatedShipment.fromUser?.name} to ${updatedShipment.toUser?.name}`,
+                        timestamp: new Date(),
+                    },
+                });
+                console.log("Created product event - " + productEvent.id, productEvent);
+
+                const createAssetDetails = {
+                    id: productEvent.id,
+                    eventType: "SHIPPED",
+                    timestamp: new Date().toISOString(),
+                    quantity: (updatedShipment.quantity || 0),
+                    description: `Shipment ${updatedShipment.id} shipped from ${updatedShipment.fromUser?.name} to ${updatedShipment.toUser?.name}`,
+                    batchId: updatedShipment.batchId,
+                    userId: updatedShipment.fromUserId,
+                    shipmentId: updatedShipment.id,
+                };
+                const fabricService = await getFabricService();
+                const createAssetResult = await fabricService.submitTransaction(
+                    "CreateAsset",
+                    JSON.stringify(createAssetDetails)
+                );
+                console.log("Created asset on blockchain (SHIPPED):", createAssetResult);
+            }
+
+            // delivered
+            if (data.status === "DELIVERED") {
+                const currentInventory = await tx.inventory.findUnique({
+                    where: {
+                        unique_inventory: {
+                            batchId: updatedShipment.batchId,
+                            userId: updatedShipment.toUserId,
+                        },
+                    },
+                });
+
+                const newInventory = await tx.inventory.upsert({
+                    where: {
+                        unique_inventory: {
+                            batchId: updatedShipment.batchId,
+                            userId: updatedShipment.toUserId,
+                        },
+                    },
+                    create: {
+                        batchId: updatedShipment.batchId,
+                        userId: updatedShipment.toUserId,
+                        quantity: updatedShipment.quantity || 0,
+                        updatedAt: new Date(),
+                    },
+                    update: {
+                        quantity: (currentInventory?.quantity || 0) + (updatedShipment.quantity || 0),
+                        updatedAt: new Date(),
+                    },
+                    include: {
+                        batch: true,
+                        user: true,
+                    },
+                });
+                console.log("Updated inventory - " + newInventory.id, newInventory);
+
+                if (newInventory.user.role === "RETAILER") {
+                    const batch = await tx.shipment.update({
+                        where: { id },
+                        data: {
+                            trackingKey: `${newInventory.userId}-${newInventory.id}-${newInventory.batchId}`,
+                        },
+                    });
+                    console.log("Updated shipment with tracking key - " + batch.id, batch);
+
+                    const inventory = await tx.inventory.update({
+                        where: {
+                            id: newInventory.id,
+                        },
+                        data: {
+                            trackingKey: batch.trackingKey,
+                        },
+                    });
+                    console.log("Updated inventory with tracking key - " + inventory.id, inventory);
+                }
+
+                const productEvent = await tx.productEvent.create({
+                    data: {
+                        batchId: updatedShipment.batchId,
+                        shipmentId: updatedShipment.id,
+                        userId: updatedShipment.toUserId,
+                        quantity: updatedShipment.quantity || 0,
+                        eventType: "DELIVERED",
+                        description: `Shipment ${updatedShipment.id} received by ${updatedShipment.toUser?.name}`,
+                        timestamp: new Date(),
+                    },
+                });
+                console.log("Created product event - " + productEvent.id, productEvent);
+
+                const createAssetDetails = {
+                    id: productEvent.id,
+                    eventType: "DELIVERED",
+                    timestamp: new Date().toISOString(),
+                    quantity: (updatedShipment.quantity || 0),
+                    description: `Shipment ${updatedShipment.id} received by ${updatedShipment.toUser?.name}`,
+                    batchId: updatedShipment.batchId,
+                    userId: updatedShipment.toUserId,
+                    shipmentId: updatedShipment.id,
+                };
+
+                const fabricService = await getFabricService();
+                const createAssetResult = await fabricService.submitTransaction(
+                    "CreateAsset",
+                    JSON.stringify(createAssetDetails)
+                );
+                console.log("Created asset on blockchain (DELIVERED):", createAssetResult);
+            }
+            return updatedShipment;
         });
-        console.log("Created product event - " + productEvent.id, productEvent);
+        return shipment;
+    } catch (error) {
+        console.error("Error updating shipment:", error);
+        let errorMessage = "Unknown error";
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        throw new Error(`Failed to update shipment with ID ${id}: ${errorMessage}`);
     }
-    return shipment;
 };
 
 export const deleteShipment = async (id: string) => {

@@ -7,6 +7,7 @@ export interface ProductJourneyEvent {
     eventType: string;
     timestamp: string | Date;
     description: string;
+    txHash: string;
     user: {
         id: string;
         name: string;
@@ -90,9 +91,12 @@ const ProductJourney: FC<ProductJourneyProps> = ({ data }) => {
                                         </Badge>
                                     )}
                                 </div>
-                                <div className="flex-1">
+                                <div className="flex-1 space-y-2">
                                     <p className="font-medium">
                                         {event.description}
+                                    </p>
+                                    <p className="text-xs font-semibold text-gray-500">
+                                        TxHash: {event.txHash}
                                     </p>
                                     <p className="text-sm text-gray-500">
                                         {format(

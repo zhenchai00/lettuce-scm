@@ -1,14 +1,16 @@
-import prisma from "@/lib/prisma"
+import { getFabricService } from "@/lib/fabric";
+import prisma from "@/lib/prisma";
 
 export interface ProductJourneyEvent {
     eventType: string;
     timestamp: Date;
     description: string;
+    txHash: string;
     user: {
         id: string;
         name: string;
         email: string;
-    }
+    };
 }
 
 export interface ProductJourney {
@@ -17,7 +19,9 @@ export interface ProductJourney {
     events: ProductJourneyEvent[];
 }
 
-export const getTrackingInfo = async (trackingNumber: string) => {
+export const getTrackingInfo = async (
+    trackingNumber: string
+): Promise<ProductJourney> => {
     // get the shipment based on the trackingkey = retailerId-batchId-shipmentId
     const shipment = await prisma.shipment.findFirst({
         where: {
@@ -32,16 +36,13 @@ export const getTrackingInfo = async (trackingNumber: string) => {
             fromUser: true,
         },
     });
-    console.log("Fetched tracking info for number:", trackingNumber, shipment);
-
     // If no shipment found, return an empty array
     if (!shipment) {
-        console.log("No shipment found for tracking number:", trackingNumber);
-        return [];
+        throw new Error("Shipment not found for the provided tracking number.");
     }
 
     // get the product batch details
-    const batchProduct = await prisma.batchProduct.findFirst({
+    const batch = await prisma.batchProduct.findFirst({
         where: {
             id: shipment?.batchId,
         },
@@ -49,65 +50,116 @@ export const getTrackingInfo = async (trackingNumber: string) => {
             farmer: true,
         },
     });
+    if (!batch) {
+        throw new Error("Batch not found for the provided shipment.");
+    }
 
-    // farmer based product events will be used to show the journey of the product from farmer to retailer
-    const farmerBasedProductEvents = await prisma.productEvent.findMany({
+    const distributorShipment = await prisma.shipment.findFirst({
         where: {
-            batchId: shipment?.batchId,
-            userId: batchProduct?.farmerId,
+            batchId: batch?.id,
+            fromUserId: batch?.farmerId,
+            toUserId: shipment?.fromUserId,
+        },
+        orderBy: {
+            createdAt: "desc",
         },
         include: {
-            user: true,
+            batch: true,
+            toUser: true,
+            fromUser: true,
         },
     });
 
-    // distributor based product events will be used to show the journey of the product from distributor to retailer
-    const distributorBasedProductEvents = await prisma.productEvent.findMany({
-        where: {
-            batchId: shipment?.batchId,
+    const stages = [
+        {
+            label: "farmer",
+            shipmentId: "",
+            userId: batch?.farmerId,
+        },
+        {
+            label: "distributor",
+            shipmentId: distributorShipment?.id ?? "",
             userId: shipment?.fromUserId,
         },
-        include: {
-            user: true,
+        {
+            label: "distributor",
+            shipmentId: shipment?.id ?? "",
+            userId: shipment?.fromUserId,
         },
-    });
-
-    // retailer based product events will be used to show the journey of the product from distributor to retailer
-    const retailerBasedProductEvents = await prisma.productEvent.findMany({
-        where: {
-            batchId: shipment?.batchId,
+        {
+            label: "retailer",
+            shipmentId: shipment?.id,
             userId: shipment?.toUserId,
         },
-        include: {
-            user: true,
-        },
-    });
+    ];
 
-    // Combine all events into a single array
-    const allEvents: ProductJourneyEvent[] = [
-        ...farmerBasedProductEvents,
-        ...distributorBasedProductEvents,
-        ...retailerBasedProductEvents,
-    ].map(event => ({
-        eventType: event.eventType,
-        timestamp: event.timestamp,
-        description: event.description ?? "",
-        user: {
-            id: event.user.id,
-            name: event.user.name,
-            email: event.user.email,
-        },
-    }));
+    const fabricService = await getFabricService();
+    const rawJson = await Promise.all(
+        stages.map(({ shipmentId, userId }) =>
+            fabricService
+                .submitTransaction(
+                    "GetProductJourney",
+                    batch?.id,
+                    shipmentId,
+                    userId
+                )
+                .catch(() => null)
+        )
+    );
+    console.log("Raw events by stage:", rawJson);
 
-    // Sort events by timestamp in ascending order
-    allEvents.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const rawEvents = rawJson
+        .filter((js) => typeof js === "string")
+        .flatMap((js) => JSON.parse(js as string));
 
-    // Create the product journey object
-    const productJourney: ProductJourney = {
-        batchId: shipment?.batchId || "",
-        trackingKey: shipment?.trackingKey || "",
-        events: allEvents,
+    const userCache = new Map<string, { name: string; email: string }>();
+    const loadUser = async (uid: string) => {
+        if (!userCache.has(uid)) {
+            const u = await prisma.user.findUnique({
+                where: { id: uid },
+                select: {
+                    name: true,
+                    email: true,
+                },
+            });
+            userCache.set(uid, {
+                name: u?.name ?? "Unknown",
+                email: u?.email ?? "Unknown",
+            });
+        }
+        return userCache.get(uid)!;
     };
 
-    return productJourney;
-}
+    const events = await Promise.all(
+        rawEvents.map(async (e) => {
+            const { name, email } = await loadUser(e.userId);
+            return {
+                eventType: e.eventType,
+                timestamp: new Date(e.timestamp),
+                description: e.description ?? "",
+                txHash: e.txHash ?? "",
+                user: { id: e.userId, name, email },
+            } as ProductJourneyEvent;
+        })
+    );
+
+    // 8) Sort & return
+    events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    return {
+        batchId: batch.id,
+        trackingKey: trackingNumber,
+        events,
+    };
+};
+
+const getUserDetails = async (userId: string) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+        },
+    });
+    return user || { id: "", name: "Unknown", email: "Unknown" };
+};
