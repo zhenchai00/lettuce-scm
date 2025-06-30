@@ -18,7 +18,7 @@ export const submitContactForm = async (data: ContactFormData) => {
 };
 
 export const getLettuceTrackingInfo = async (trackingNumber: string) => {
-    const url = `/api/tracking`;
+    const url = `/api/public/tracking`;
     const params = { id: trackingNumber };
     try {
         const response = await apiClient.get(url, { params });
@@ -35,7 +35,7 @@ export const getLettuceTrackingInfo = async (trackingNumber: string) => {
 };
 
 export const getShopProducts = async () => {
-    const url = `/api/shop`;
+    const url = `/api/public/shop`;
     try {
         const response = await apiClient.get(url);
         return response.data; // ← don’t call `.json()` on response.data!
