@@ -12,4 +12,11 @@ cd test-network
 # Deploy the asset transfer chaincode written in TypeScript
 ./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-typescript -ccl typescript -c mychannel
 
+
+# To retrieve all assets
+peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllAssets"]}'
+
+# To retrieve the product journey
+peer chaincode query -C mychannel -n basic -c '{"function":"GetProductJourney","Args":["<product-batch-id>","<shipment-id>","<user-id>"]}'
+
 ```
