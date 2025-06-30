@@ -162,7 +162,8 @@ export class AssetTransferContract extends Contract {
     public async GetProductJourney(
         ctx: Context,
         batchId: string,
-        shipmentId?: string
+        shipmentId?: string,
+        userId?: string,
     ): Promise<string> {
         let queryString = {
             selector: {
@@ -173,6 +174,9 @@ export class AssetTransferContract extends Contract {
         };
         if (shipmentId && shipmentId !== '') {
             queryString.selector['shipmentId'] = shipmentId;
+        }
+        if (userId && userId !== '') {
+            queryString.selector['userId'] = userId;
         }
 
         console.info(`Executing rich query: ${JSON.stringify(queryString)}`);

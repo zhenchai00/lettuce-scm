@@ -7,7 +7,7 @@ To run the fabric infrastructure, you need to have Docker installed and running 
 cd test-network
 
 # Start the Fabric network with setup a channel
-./network.sh up createChannel -c mychannel
+./network.sh up createChannel -c mychannel -s couchdb
 
 # Deploy the asset transfer chaincode written in TypeScript
 ./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-typescript -ccl typescript -c mychannel
