@@ -1,5 +1,5 @@
 # Use the official Node.js image as the base image
-FROM node:22-slim
+FROM node:22-alpine
 
 # Set the pnpm environment variable
 ENV PNPM_HOME="/pnpm"
