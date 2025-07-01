@@ -226,9 +226,10 @@ const CreateShipmentForm: FC<CreateShipmentFormProps> = ({ onSuccess, onCancel }
                                                     Error loading products
                                                 </SelectItem>
                                             ) : (
-                                                inventory.map((product: InventoryRow) => (
+                                                inventory.map((product: InventoryRow, index: number) => (
                                                     <SelectItem
-                                                        key={product.id}
+                                                        key={index}
+                                                        // key={`product.id-${product.id}-${product.batch?.id}`}
                                                         value={product.batch?.id ?? ""}
                                                     >
                                                         {product.batch?.produceType} - {product.quantity} - {product.batch?.description ? product.batch?.description : ""} - {product.user?.name}
