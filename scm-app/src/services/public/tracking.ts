@@ -151,15 +151,3 @@ export const getTrackingInfo = async (
         events,
     };
 };
-
-const getUserDetails = async (userId: string) => {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-        },
-    });
-    return user || { id: "", name: "Unknown", email: "Unknown" };
-};

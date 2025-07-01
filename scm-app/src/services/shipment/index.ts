@@ -2,95 +2,119 @@ import { getFabricService } from "@/lib/fabric";
 import prisma from "@/lib/prisma";
 
 export const getShipment = async () => {
-    console.log("Fetching shipments");
-    const shipments = await prisma.shipment.findMany({
-        orderBy: {
-            createdAt: "desc",
-        },
-        include: {
-            batch: true,
-            fromUser: true,
-            toUser: true,
-        },
-    });
-    console.log("Fetched shipments:", shipments);
-    return shipments || [];
+    try {
+        console.log("Fetching shipments");
+        const shipments = await prisma.shipment.findMany({
+            orderBy: {
+                createdAt: "desc",
+            },
+            include: {
+                batch: true,
+                fromUser: true,
+                toUser: true,
+            },
+        });
+        console.log("Fetched shipments:", shipments);
+        return shipments || [];
+    } catch (error) {
+        console.error("Error fetching shipments:", error);
+        throw new Error("Failed to fetch shipments");
+    }
 };
 
 export const getShipmentById = async (id: string) => {
-    console.log("Fetching shipment with ID:", id);
-    const shipment = await prisma.shipment.findUnique({
-        where: { id },
-        include: {
-            batch: true,
-            fromUser: true,
-            toUser: true,
-        },
-    });
-    console.log("Fetched shipment:", shipment);
-    return shipment || [];
+    try {
+        console.log("Fetching shipment with ID:", id);
+        const shipment = await prisma.shipment.findUnique({
+            where: { id },
+            include: {
+                batch: true,
+                fromUser: true,
+                toUser: true,
+            },
+        });
+        console.log("Fetched shipment:", shipment);
+        return shipment || [];
+    } catch (error) {
+        console.error("Error fetching shipment:", error);
+        throw new Error(`Shipment with ID ${id} not found`);
+    }
 };
 
 // Fetch all shipments for a specific user, either as sender or receiver
 export const getAllShipmentByUserId = async (userId: string) => {
-    console.log("Fetching shipments for user ID:", userId);
-    const shipments = await prisma.shipment.findMany({
-        where: {
-            OR: [{ fromUserId: userId }, { toUserId: userId }],
-        },
-        include: {
-            batch: true,
-            fromUser: true,
-            toUser: true,
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-    });
-    console.log("Fetched shipments for user:", shipments);
-    return shipments || [];
+    try {
+        console.log("Fetching shipments for user ID:", userId);
+        const shipments = await prisma.shipment.findMany({
+            where: {
+                OR: [{ fromUserId: userId }, { toUserId: userId }],
+            },
+            include: {
+                batch: true,
+                fromUser: true,
+                toUser: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+        console.log("Fetched shipments for user:", shipments);
+        return shipments || [];
+    } catch (error) {
+        console.error("Error fetching shipments by user ID:", error);
+        throw new Error(`Shipments for user ID ${userId} not found`);
+    }
 };
 
 export const createShipment = async (data: any) => {
-    console.log("Creating shipment:", data);
-    const inventory = await prisma.inventory.findUnique({
-        where: {
-            unique_inventory: {
-                batchId: data.productBatch,
-                userId: data.fromUser,
+    try {
+        console.log("Creating shipment:", data);
+        const inventory = await prisma.inventory.findUnique({
+            where: {
+                unique_inventory: {
+                    batchId: data.productBatch,
+                    userId: data.fromUser,
+                },
             },
-        },
-        include: {
-            batch: true,
-            user: true,
-        },
-    });
-    const toUser = await prisma.user.findUnique({
-        where: { id: data.toUser },
-    });
-    const shipmentData: any = {
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        quantity: data.quantity,
-        status: "ORDERED",
-        batch: { connect: { id: data.productBatch } },
-    };
-    if (toUser) {
-        shipmentData.toUser = { connect: { id: toUser.id } };
+            include: {
+                batch: true,
+                user: true,
+            },
+        });
+        const toUser = await prisma.user.findUnique({
+            where: { id: data.toUser },
+        });
+        const shipmentData: any = {
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            quantity: data.quantity,
+            status: "ORDERED",
+            batch: { connect: { id: data.productBatch } },
+        };
+        if (toUser) {
+            shipmentData.toUser = { connect: { id: toUser.id } };
+        }
+        if (inventory?.user) {
+            shipmentData.fromUser = { connect: { id: inventory.user.id } };
+        }
+        const shipment = await prisma.shipment.create({
+            data: shipmentData,
+            include: {
+                batch: true,
+                fromUser: true,
+                toUser: true,
+            },
+        });
+        console.log("Created shipment - " + shipment.id, shipment);
+        return shipment;
+    } catch (error) {
+        console.error("Error creating shipment:", error);
+        let errorMessage = "Unknown error";
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        throw new Error(`Failed to create shipment: ${errorMessage}`);
     }
-    if (inventory?.user) {
-        shipmentData.fromUser = { connect: { id: inventory.user.id } };
-    }
-    const shipment = await prisma.shipment.create({
-        data: shipmentData,
-        include: {
-            batch: true,
-            fromUser: true,
-            toUser: true,
-        },
-    });
-    console.log("Created shipment - " + shipment.id, shipment);
-    return shipment;
 };
 
 export const updateShipment = async (id: string, data: any) => {
@@ -129,9 +153,12 @@ export const updateShipment = async (id: string, data: any) => {
                     toUser: true,
                 },
             });
-            console.log("Updated shipment - " + updatedShipment.id, updatedShipment);
+            console.log(
+                "Updated shipment - " + updatedShipment.id,
+                updatedShipment
+            );
 
-            // out of delivery 
+            // out of delivery
             if (data.status === "OUTOFDELIVERY") {
                 const currentInventory = await tx.inventory.findUnique({
                     where: {
@@ -150,7 +177,9 @@ export const updateShipment = async (id: string, data: any) => {
 
                 const newInventory = await tx.inventory.update({
                     data: {
-                        quantity: currentInventory.quantity - (updatedShipment.quantity || 0),
+                        quantity:
+                            currentInventory.quantity -
+                            (updatedShipment.quantity || 0),
                         updatedAt: new Date(),
                     },
                     where: {
@@ -164,7 +193,10 @@ export const updateShipment = async (id: string, data: any) => {
                         user: true,
                     },
                 });
-                console.log("Updated inventory - " + newInventory.id, newInventory);
+                console.log(
+                    "Updated inventory - " + newInventory.id,
+                    newInventory
+                );
 
                 const productEvent = await tx.productEvent.create({
                     data: {
@@ -177,13 +209,16 @@ export const updateShipment = async (id: string, data: any) => {
                         timestamp: new Date(),
                     },
                 });
-                console.log("Created product event - " + productEvent.id, productEvent);
+                console.log(
+                    "Created product event - " + productEvent.id,
+                    productEvent
+                );
 
                 const createAssetDetails = {
                     id: productEvent.id,
                     eventType: "SHIPPED",
                     timestamp: new Date().toISOString(),
-                    quantity: (updatedShipment.quantity || 0),
+                    quantity: updatedShipment.quantity || 0,
                     description: `Shipment ${updatedShipment.id} shipped from ${updatedShipment.fromUser?.name} to ${updatedShipment.toUser?.name}`,
                     batchId: updatedShipment.batchId,
                     userId: updatedShipment.fromUserId,
@@ -194,7 +229,10 @@ export const updateShipment = async (id: string, data: any) => {
                     "CreateAsset",
                     JSON.stringify(createAssetDetails)
                 );
-                console.log("Created asset on blockchain (SHIPPED):", createAssetResult);
+                console.log(
+                    "Created asset on blockchain (SHIPPED):",
+                    createAssetResult
+                );
             }
 
             // delivered
@@ -222,7 +260,9 @@ export const updateShipment = async (id: string, data: any) => {
                         updatedAt: new Date(),
                     },
                     update: {
-                        quantity: (currentInventory?.quantity || 0) + (updatedShipment.quantity || 0),
+                        quantity:
+                            (currentInventory?.quantity || 0) +
+                            (updatedShipment.quantity || 0),
                         updatedAt: new Date(),
                     },
                     include: {
@@ -230,7 +270,10 @@ export const updateShipment = async (id: string, data: any) => {
                         user: true,
                     },
                 });
-                console.log("Updated inventory - " + newInventory.id, newInventory);
+                console.log(
+                    "Updated inventory - " + newInventory.id,
+                    newInventory
+                );
 
                 if (newInventory.user.role === "RETAILER") {
                     const batch = await tx.shipment.update({
@@ -239,7 +282,10 @@ export const updateShipment = async (id: string, data: any) => {
                             trackingKey: `${newInventory.userId}-${newInventory.id}-${newInventory.batchId}`,
                         },
                     });
-                    console.log("Updated shipment with tracking key - " + batch.id, batch);
+                    console.log(
+                        "Updated shipment with tracking key - " + batch.id,
+                        batch
+                    );
 
                     const inventory = await tx.inventory.update({
                         where: {
@@ -249,7 +295,10 @@ export const updateShipment = async (id: string, data: any) => {
                             trackingKey: batch.trackingKey,
                         },
                     });
-                    console.log("Updated inventory with tracking key - " + inventory.id, inventory);
+                    console.log(
+                        "Updated inventory with tracking key - " + inventory.id,
+                        inventory
+                    );
                 }
 
                 const productEvent = await tx.productEvent.create({
@@ -263,13 +312,16 @@ export const updateShipment = async (id: string, data: any) => {
                         timestamp: new Date(),
                     },
                 });
-                console.log("Created product event - " + productEvent.id, productEvent);
+                console.log(
+                    "Created product event - " + productEvent.id,
+                    productEvent
+                );
 
                 const createAssetDetails = {
                     id: productEvent.id,
                     eventType: "DELIVERED",
                     timestamp: new Date().toISOString(),
-                    quantity: (updatedShipment.quantity || 0),
+                    quantity: updatedShipment.quantity || 0,
                     description: `Shipment ${updatedShipment.id} received by ${updatedShipment.toUser?.name}`,
                     batchId: updatedShipment.batchId,
                     userId: updatedShipment.toUserId,
@@ -281,7 +333,10 @@ export const updateShipment = async (id: string, data: any) => {
                     "CreateAsset",
                     JSON.stringify(createAssetDetails)
                 );
-                console.log("Created asset on blockchain (DELIVERED):", createAssetResult);
+                console.log(
+                    "Created asset on blockchain (DELIVERED):",
+                    createAssetResult
+                );
             }
             return updatedShipment;
         });
@@ -292,15 +347,28 @@ export const updateShipment = async (id: string, data: any) => {
         if (error instanceof Error) {
             errorMessage = error.message;
         }
-        throw new Error(`Failed to update shipment with ID ${id}: ${errorMessage}`);
+        throw new Error(
+            `Failed to update shipment with ID ${id}: ${errorMessage}`
+        );
     }
 };
 
 export const deleteShipment = async (id: string) => {
-    console.log("Deleting shipment with ID:", id);
-    const shipment = await prisma.shipment.delete({
-        where: { id },
-    });
-    console.log("Deleted shipment:", shipment);
-    return shipment;
+    try {
+        console.log("Deleting shipment with ID:", id);
+        const shipment = await prisma.shipment.delete({
+            where: { id },
+        });
+        console.log("Deleted shipment:", shipment);
+        return shipment;
+    } catch (error) {
+        console.error("Error deleting shipment:", error);
+        let errorMessage = "Unknown error";
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        throw new Error(
+            `Failed to delete shipment with ID ${id}: ${errorMessage}`
+        );
+    }
 };
