@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/axios/api-client";
 import { ContactFormData } from "./type";
+import { toast } from "sonner";
 
 export const submitContactForm = async (data: ContactFormData) => {
     const response = await fetch("/api/contact", {
@@ -12,6 +13,10 @@ export const submitContactForm = async (data: ContactFormData) => {
 
     if (!response.ok) {
         const errorData = await response.json();
+        toast.error(
+            "Failed to submit contact form. Please try again later. " +
+            (errorData.message || "Unknown error")
+        );
         throw new Error(errorData.message || "Failed to submit contact form");
     }
     return response.json();
@@ -24,6 +29,10 @@ export const getLettuceTrackingInfo = async (trackingNumber: string) => {
         const response = await apiClient.get(url, { params });
         return response.data; // ← don’t call `.json()` on response.data!
     } catch (err: any) {
+        toast.error(
+            "Failed to load tracking information. Please try again later. " +
+            (err.response?.data?.message || "Unknown error")
+        );
         console.error(
             "[getLettuceTrackingInfo] ERROR status:",
             err.response?.status,
@@ -40,6 +49,10 @@ export const getShopProducts = async () => {
         const response = await apiClient.get(url);
         return response.data; // ← don’t call `.json()` on response.data!
     } catch (err: any) {
+        toast.error(
+            "Failed to load products. Please try again later. " +
+            (err.response?.data?.message || "Unknown error")
+        );
         console.error(
             "[getShopProducts] ERROR status:",
             err.response?.status,

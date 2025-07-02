@@ -13,7 +13,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(200).json(trackingInfo);
     } catch (error) {
         console.error("Error fetching tracking info:", error);
-        return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch tracking information" });
+        return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch tracking information " + error });
     }
 }
 

@@ -7,7 +7,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(200).json(products);
     } catch (error) {
         console.error("Error fetching shop products:", error);
-        return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch shop products" });
+        return res.status(500).json({ error: "Internal Server Error", message: "Failed to fetch shop products. " + error });
     }
 }
 

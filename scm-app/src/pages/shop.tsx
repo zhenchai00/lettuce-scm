@@ -140,7 +140,7 @@ export default function shop() {
                             </DialogHeader>
                             <div className="mt-2">
                                 <p className="text-sm">
-                                    <strong>Product Journey:</strong>{" "}
+                                    <strong>Tracking Number:</strong>{" "}
                                     {selected.trackingKey || (
                                         <span className="italic text-gray-500">
                                             Not generated yet

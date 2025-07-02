@@ -113,6 +113,12 @@ export default function Home() {
                         <Loader className="animate-spin h-8 w-8 text-gray-500" />
                     </div>
                 )}
+                {isError && (
+                    <p className="text-center text-red-500">
+                        Failed to load tracking information. Please try again
+                        later.
+                    </p>
+                )}
                 {data && (
                     <ProductJourney data={data} />
                 )}
