@@ -66,7 +66,7 @@ const UpdateShipmentForm: FC<UpdateShipmentFormProps> = ({
             form.reset();
             onSuccess();
             onUpdate?.();
-            toast.success("shipment updated successfully.");
+            toast.success("Shipment updated successfully.");
         },
         onError: (error: Error) => {
             console.error("Error updating shipment:", error);

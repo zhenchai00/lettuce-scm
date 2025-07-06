@@ -119,11 +119,11 @@ const CreateShipmentForm: FC<CreateShipmentFormProps> = ({ onSuccess, onCancel }
             queryClient.invalidateQueries({ queryKey: ["shipment"] });
             form.reset();
             onSuccess();
-            toast.success("User created successfully.");
+            toast.success("Shipment created successfully.");
         },
         onError: (error: Error) => {
-            console.error("Error creating user:", error);
-            toast.error("Failed to create user. Please try again later.");
+            console.error("Error creating shipment:", error);
+            toast.error("Failed to create shipment. Please try again later.");
         },
     });
 
