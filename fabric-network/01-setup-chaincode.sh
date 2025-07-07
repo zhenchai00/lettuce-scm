@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cd test-network
 
-./network.sh up createChannel
+./network.sh up createChannel -s couchdb
 
 ./network.sh deployCC -ccn basic -ccp chaincode/product-event-chaincode -ccl typescript
 
