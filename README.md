@@ -1,6 +1,20 @@
-# lettuce-scm
+# Lettuce Supply Chain Management (SCM)
 This project is Final Year Project for My Bachelor's Degree in Computer Science. This is the simplify Supply Chain Management (SCM) application built with NextJS, React, and PostgreSQL, implement with the Blockchain technology  [Hyperledger Fabric](https://github.com/hyperledger/fabric). 
 The application is designed to manage the supply chain processes efficiently, ensuring transparency and traceability of products from manufacturers to consumers.
+
+# Table of Contents
+- [Lettuce Supply Chain Management (SCM)](#lettuce-supply-chain-management-scm)
+- [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [System Demo](#system-demo)
+  - [Folder Structure](#folder-structure)
+- [Resources](#resources)
+  - [System Architecture](#system-architecture)
+  - [Use Cases](#use-cases)
+  - [Class Diagram](#class-diagram)
+  - [Features Screenshots](#features-screenshots)
+- [License](#license)
+
 
 ## Features
 - User authentication and authorization
