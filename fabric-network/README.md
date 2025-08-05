@@ -2,6 +2,8 @@
 
 To run the fabric infrastructure, you need to have Docker installed and running on your machine. The following steps will guide you through the process of setting up the Fabric network and deploying the asset transfer chaincode.
 
+> This configuration is based on the Hyperledger Fabric test network. You can find more details in the [Hyperledger Fabric documentation](https://hyperledger-fabric.readthedocs.io/en/latest/test_network.html).
+
 ```bash
 # access the test-network directory
 cd test-network
